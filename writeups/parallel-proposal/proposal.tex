@@ -1,0 +1,73 @@
+
+\documentclass[10pt, twocolumn]{scrartcl} % use larger type; default would be 10pt
+
+\usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
+\usepackage[cm]{fullpage}
+\usepackage{graphicx} % support the \includegraphics command and options
+\usepackage{biblatex} % use biber command to regenerate references
+
+\renewcommand{\bibfont}{\footnotesize}
+\pagenumbering{gobble}
+\usepackage{hyperref}
+\usepackage{paralist}
+\usepackage[compact]{titlesec}
+\addbibresource{bib/proposal.bib}
+
+
+\title{Parallelised Pose Estimation for Automated Landing}
+\subtitle{CS267: Final Project Proposal}
+\author{Nahush Bhanage, Hoang Nguyen, Sunil Shah}
+\date{} 
+
+\begin{document}
+\maketitle
+This project is motivated by a wider project as part of the Cyber-Physical Cloud Computing research group in Civil Engineering where we are investigating various applications of unmanned aerial systems (UAS). 
+
+We have implemented the automated landing system described in \cite{sharp2001vision}. This involves using a marker with a known design combined with computer vision techniques to estimate the pose of a vertical takeoff and landing unmanned aerial vehicle (UAV). 
+
+The motivation for using a vision based system is that current methods of localisation for outdoor vehicles primarily use GPS for translational position, combined with barometric pressure and inertial measurement units to give accurate altitude and acceleration measurements. This is considerably inaccurate - in tests we performed, the mean accuracy of landing using GPS was 95.33 centimetres with a standard deviation of 110.73 centimetre. 
+
+For many commercial applications of small multicopter UAVs, this is inadequate. Using our vision based system, we were able to get highly accurate pose estimates, with an error of less than 2 centimetres at a 2 metre height above the landing pad.
+
+However, one of the goals of this project was implementation on commodity (i.e., off-the-shelf) electronics. The rise in popularity of multicopter UAVs has been driven by the availability of cheap open hardware projects such as the Arduino embedded computer and the ability to fabricate and assemble airframes at home. For our initial attempt, we used the Beaglebone Black, a computer similar to the popular Raspberry Pi - running a single core 1 GHz ARM processor. Sadly, our serial implementation of our pose estimation and control software ran at just under 2 frames per second - far too slow for real time control.
+
+This project aims to improve the performance of this landing system by employing three optimisations:
+\begin{compactenum}
+\item{Optimised serial performance by inlining calls to OpenCV methods}
+\item{Implementation of multithreading}
+\item{Use of ARM NEON SIMD extensions}
+\end{compactenum}
+
+Our current solution is written in C++, using OpenCV and ROS. We will continue to use the same architecture.
+
+\subsubsection*{Hardware}
+We have two embedded boards available to use, both of which are highly parallel in architecture. 
+
+\paragraph{ODroid XU}
+The ODroid XU is an embedded computer manufactured in Korea featuring two quad core ARM processors that operate in ARM's big.LITTLE configuration, the faster A15 processor of which operates at 1.6 GHz. It has an additional GPU but there is no built-in driver support for this in the Ubuntu Linux kernel provided (there is proprietary support built into their Android distribution but we will not be using this).
+
+\paragraph{Parallela}
+The Parallela is a embedded computer that has a dual core ARM A9 processor paired with the proprietary \textit{Epiphany Multicore Accelerator}. This is a 16 or 64-core array of RISC processors which can be programmed using OpenCL. While this board is not publicly available, we have remote access to their development cluster and can use this for benchmarking.
+
+\subsubsection*{Software}
+\paragraph{OpenCV}
+The current implementation uses OpenCV. However, each call to OpenCV generates a single pass over the input image. For robust corner detection and thresholding, we require multiple calls to OpenCV functions which requires several passes over each image. This is one ready optimisation that might require implementing OpenCV functions ourself.
+
+\paragraph{ROS}
+Adequate control requires at signal of at least 5Hz and ideally 10Hz. Using ROS we are able to rate limit and load balance running \textit{nodes}. We may also wish to investigate how to optimise running ROS processes such that control signals are given a high priority.
+
+\subsubsection*{Test Data}
+The CPCC lab has three quadrotor UAVs equipped with a suitable rig to carry our embedded computer and a Logitech C920 webcamera with which to capture images. We also have a landing pattern already fabricated and ready for use.
+
+\section*{Goals}
+\begin{compactenum}
+\item{Optimise serial implementation}
+\item{Investigate and implement multi-threaded approaches}
+\item{Benchmark on ODroid and Parallela}
+\item{Demonstrate automated landing}
+\end{compactenum}
+
+\printbibliography
+
+\end{document}
+
