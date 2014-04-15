@@ -46,3 +46,6 @@ make install
 sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv.conf'
 ldconfig
 echo "OpenCV" $version "ready to be used"
+
+echo "INSTALLING GIT"
+apt-get -yqq install git
