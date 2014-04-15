@@ -13,6 +13,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "chef/ubuntu-13.10"
 
   config.vm.provision "shell", path: "scripts/bootstrap.sh"
+  config.vm.provision :file, source: '~/.gitconfig', destination: '/home/vagrant/.gitconfig'
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
