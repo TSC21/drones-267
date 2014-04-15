@@ -15,3 +15,5 @@ trash/
 *.out
 
 *.xml
+
+.vagrant
