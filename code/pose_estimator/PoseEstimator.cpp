@@ -107,10 +107,10 @@ int main(int argc, char **argv)
             std_msgs::Float64MultiArray simplePoseMsg = \
                 makeSimplePoseMsg(simplePose);
             simplePosePub.publish(simplePoseMsg);
-            //ROS_INFO("Tick.");
+            ROS_INFO("Tick.");
         } else {
             // Don't publish anything this tick.
-            ROS_INFO("Could not detect all corners!");
+            //ROS_INFO("Could not detect all corners!");
         }
 
         ros::spinOnce();
@@ -119,9 +119,10 @@ int main(int argc, char **argv)
 
         if (framesProcessed == 20) {
             totalTime = readTimer() - totalTime;
-            ROS_INFO("%d frames processed over %g seconds, %f FPS", framesProcessed, totalTime, (framesProcessed/totalTime));
-            ROS_INFO("capture: %f, detectCorners: %f, calibrateImagePoints: %f, estimatePose: %f", captureTime, detectCornersTime, calibrateImagePointsTime, estimatePoseTime);
-            ROS_INFO("medianBlur: %f, Canny: %f, findContours: %f, approxPolydp1: %f, getIndexOfOuterSquare: %f, approxPolyDP2: %f, labelPolygons: %f, labelCorners: %f", 
+            ROS_INFO("frames\tseconds\tfps\tcapture\tdetectCorners\tcalibrateImagePoints\testimatePose");
+            ROS_INFO("%d\t%g\t%f\t%f\t%f\t%f\t%f",framesProcessed, totalTime, (framesProcessed/totalTime), captureTime, detectCornersTime, calibrateImagePointsTime, estimatePoseTime);
+            ROS_INFO("medianBlur\tCanny\tfindContours\tapproxPolydp1\tgetIndexOfOuterSquare\tapproxPolyDP2\tlabelPolygons\tlabelCorners");
+            ROS_INFO("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f", 
                 detectCornersTimes[0], detectCornersTimes[1], detectCornersTimes[2], detectCornersTimes[3], detectCornersTimes[4], detectCornersTimes[5], 
                 detectCornersTimes[6], detectCornersTimes[7]);
             totalTime  = readTimer();
