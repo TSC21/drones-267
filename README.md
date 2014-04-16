@@ -38,13 +38,11 @@ vagrant will automatically symlink the repository folder into ~/catkin_ws/src/dr
 
 If you're not using vagrant, be sure to clone this repository in ~/catkin_ws/src.
 
-On a machine with git installed, navigate to the root of this repository and update the roscopter and mavlink submodules:
-
 ```bash
-git submodule update --init
-cd code/roscopter
-git submodule update --init
+cd ~/catkin_ws
+catkin_make
 ```
+
 
 Usage
 -----
