@@ -43,7 +43,6 @@ cd ~/catkin_ws
 catkin_make
 ```
 
-
 Usage
 -----
 The state controller works by listening to the mode switch (typically channel 6). 
@@ -58,7 +57,7 @@ More data to come.
 
 Contributors
 ------------
-Thanks to @cberzan, @nbhanage and @hoanghw!
+Thanks to [cberzan](cberzan), [nbhanage](nbhanage) and [hoanghw](hoanghw)!
 
 [1]: http://beagleboard.org/Products/BeagleBone%20Black
 [2]: http://www.armhf.com/download/
@@ -66,3 +65,6 @@ Thanks to @cberzan, @nbhanage and @hoanghw!
 [4]: http://odroid.in/Ubuntu_Server_XU/
 [5]: http://docs.opencv.org/doc/tutorials/introduction/crosscompilation/arm_crosscompile_with_cmake.html
 [6]: https://github.com/ssk2/roscopter
+[cberzan]: https://github.com/cberzan
+[nbhanage]: https://github.com/nbhanage
+[hoanghw]: https://github.com/hoanghw
