@@ -242,7 +242,7 @@ Mat_<double> detectCorners(
         Point(0, 0));
     timer = getDifferenceAndIncrement(timer, &counters[0], 2);
     vector<Point> approx;
-    int *parentContours = new int[contours.size()];
+    int *parentContours = new int[contours.size()]; //TODO: Rename this to numberOfChildContours
     for(int i = 0; i < contours.size(); i++) {
         parentContours[i] = 0;
     }
@@ -299,6 +299,7 @@ Mat_<double> detectCorners(
 		{
             continue;
         }
+        //TODO: Do we really need to call this again? We do it once above for each 'selected contour'
         approxPolyDP(
             Mat(contours[cIndex]),
             approx,
