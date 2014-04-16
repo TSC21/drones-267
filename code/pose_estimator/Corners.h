@@ -37,6 +37,7 @@ struct _Diagonal
 
 Mat_<double> detectCorners(
     Mat const frame,
+    double* counters,
     char const* inputWindowHandle = NULL,
     char const* cannyWindowHandle = NULL,
     char const* contourWindowHandle = NULL);

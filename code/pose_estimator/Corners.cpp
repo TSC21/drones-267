@@ -1,4 +1,5 @@
 #include "Corners.h"
+#include "Profiling.h"
 #include <cstdio>
 
 #define APPROX_POLY_PARAMETER 0.05
@@ -204,9 +205,9 @@ int getIndexOfOuterSquare(int *Arr, size_t size)
     return indexOfMax;
 }
 
-
 Mat_<double> detectCorners(
     Mat const frame,
+    double* counters,
     char const* inputWindowHandle,
     char const* cannyWindowHandle,
     char const* contourWindowHandle)
@@ -218,9 +219,13 @@ Mat_<double> detectCorners(
 
     Mat cannyImage;
     Mat filteredImage;
+    double timer = readTimer();
+
     // GaussianBlur(frame, filteredImage, Size(3,3), 0, 0);
     medianBlur(frame, filteredImage, 3);
+    timer = getDifferenceAndIncrement(timer, &counters[0], 0);
     Canny(filteredImage, cannyImage, 50, 200, 3);
+    timer = getDifferenceAndIncrement(timer, &counters[0], 1);
     if(cannyWindowHandle) 
 	{
         imshow(cannyWindowHandle, cannyImage);
@@ -235,7 +240,7 @@ Mat_<double> detectCorners(
         CV_RETR_TREE,
         CV_CHAIN_APPROX_SIMPLE,
         Point(0, 0));
-
+    timer = getDifferenceAndIncrement(timer, &counters[0], 2);
     vector<Point> approx;
     int *parentContours = new int[contours.size()];
     for(int i = 0; i < contours.size(); i++) {
@@ -261,8 +266,10 @@ Mat_<double> detectCorners(
             selectedContours.push_back(i);
         }
     }
+    timer = getDifferenceAndIncrement(timer, &counters[0], 3);
 
     int indexOfOuterSquare = getIndexOfOuterSquare(parentContours, contours.size());
+    timer = getDifferenceAndIncrement(timer, &counters[0], 4);
     bool allCornersDetected = (parentContours[indexOfOuterSquare] == 6);
     delete[] parentContours;
     parentContours = 0;
@@ -310,9 +317,13 @@ Mat_<double> detectCorners(
         polygonIndex++;
     }
 
+    timer = getDifferenceAndIncrement(timer, &counters[0], 5);
+
     Point2f Corners[24];
     labelPolygons(Polygons, orderOfPolygons);
+    timer = getDifferenceAndIncrement(timer, &counters[0], 6);
     labelCorners(Polygons, orderOfPolygons, Corners);
+    timer = getDifferenceAndIncrement(timer, &counters[0], 7);
 
     if(contourWindowHandle) 
 	{

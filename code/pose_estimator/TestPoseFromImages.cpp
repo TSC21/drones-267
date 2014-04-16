@@ -2,6 +2,8 @@
 #include "Geometry.h"
 
 #include <iostream>
+#include <cstddef>
+
 using namespace std;
 
 #define ESCAPE_KEY 27
@@ -32,6 +34,7 @@ int main(int argc, char **argv)
 
         Mat_<double> corners = detectCorners(
             frame,
+            NULL,
             inputWindowHandle,
             NULL, // cannyWindowHandle,
             contourWindowHandle);

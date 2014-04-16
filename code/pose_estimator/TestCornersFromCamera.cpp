@@ -35,6 +35,7 @@ int main()
         capture >> frame;
         Mat_<double> corners = detectCorners(
             frame,
+            NULL,
             inputWindowHandle,
             NULL, // cannyWindowHandle,
             contourWindowHandle);

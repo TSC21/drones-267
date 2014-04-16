@@ -35,6 +35,7 @@ int main(int argc, char **argv)
 
         Mat_<double> corners = detectCorners(
             frame,
+            NULL,
             inputWindowHandle,
             NULL, // cannyWindowHandle,
             contourWindowHandle);

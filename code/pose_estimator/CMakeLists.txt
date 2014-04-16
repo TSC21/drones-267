@@ -30,6 +30,8 @@ add_executable(PoseEstimator
     Corners.cpp
     Geometry.h
     Geometry.cpp
+    Profiling.h
+    Profiling.cpp
 )
 target_link_libraries(PoseEstimator ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
@@ -37,6 +39,8 @@ add_executable(TestGeometry
     TestGeometry.cpp
     Geometry.h
     Geometry.cpp
+    Profiling.h
+    Profiling.cpp
 )
 target_link_libraries(TestGeometry ${OpenCV_LIBS})
 
@@ -44,6 +48,8 @@ add_executable(TestCornersFromImages
     TestCornersFromImages.cpp
     Corners.h
     Corners.cpp
+    Profiling.h
+    Profiling.cpp
 )
 target_link_libraries(TestCornersFromImages ${OpenCV_LIBS})
 
@@ -51,6 +57,8 @@ add_executable(TestCornersFromCamera
     TestCornersFromCamera.cpp
     Corners.h
     Corners.cpp
+    Profiling.h
+    Profiling.cpp
 )
 target_link_libraries(TestCornersFromCamera ${OpenCV_LIBS})
 
@@ -60,6 +68,8 @@ add_executable(TestPoseFromImages
     Corners.cpp
     Geometry.h
     Geometry.cpp
+    Profiling.h
+    Profiling.cpp
 )
 target_link_libraries(TestPoseFromImages ${OpenCV_LIBS})
 
@@ -69,6 +79,8 @@ add_executable(DemoPoseFromImages
     Corners.cpp
     Geometry.h
     Geometry.cpp
+    Profiling.h
+    Profiling.cpp
 )
 target_link_libraries(DemoPoseFromImages ${OpenCV_LIBS})
 
@@ -78,6 +90,8 @@ add_executable(TestPoseFromCamera
     Corners.cpp
     Geometry.h
     Geometry.cpp
+    Profiling.h
+    Profiling.cpp
 )
 target_link_libraries(TestPoseFromCamera ${OpenCV_LIBS})
 
