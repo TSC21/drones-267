@@ -6,8 +6,6 @@ trash/
 *.bcf
 *.DS_Store
 
-*.pdf
-
 *.log
 
 *.aux
