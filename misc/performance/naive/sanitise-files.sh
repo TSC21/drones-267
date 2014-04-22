@@ -9,7 +9,7 @@ FILENAME=$1
 
 # minimum line check
 LINES=$[`wc -l $1 | awk '{ print $1 }'`]
-if [ $LINES -lt "40" ]; then
+if [ $LINES -lt "39" ]; then
  	echo "$FILENAME does not have the minimum number of lines"
 	exit 1;
 fi
