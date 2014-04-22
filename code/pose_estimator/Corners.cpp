@@ -219,8 +219,8 @@ Mat_<double> detectCorners(
     Mat cannyImage;
     Mat filteredImage;
     // GaussianBlur(frame, filteredImage, Size(3,3), 0, 0);
-    medianBlur(frame, filteredImage, 3);
-    Canny(filteredImage, cannyImage, 50, 200, 3);
+    //medianBlur(frame, filteredImage, 3);
+    Canny(frame, cannyImage, 50, 200, 3);
     if(cannyWindowHandle) 
 	{
         imshow(cannyWindowHandle, cannyImage);
