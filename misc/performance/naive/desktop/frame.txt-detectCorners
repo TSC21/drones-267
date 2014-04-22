@@ -1,11 +1,11 @@
  medianBlur	Canny	findContours	approxPolydp1	getIndexOfOuterSquare	approxPolyDP2	labelPolygons	labelCorners
  medianBlur	Canny	findContours	approxPolydp1	getIndexOfOuterSquare	approxPolyDP2	labelPolygons	labelCorners
- medianBlur	Canny	findContours	approxPolydp1	getIndexOfOuterSquare	approxPolyDP2	labelPolygons	labelCorners
- medianBlur	Canny	findContours	approxPolydp1	getIndexOfOuterSquare	approxPolyDP2	labelPolygons	labelCorners
  0.022358	0.195842	0.012324	0.002519	0.000007	0.000459	0.000023	0.000054
+ 0.021324	0.184295	0.012914	0.002970	0.000011	0.000467	0.000024	0.000055
  medianBlur	Canny	findContours	approxPolydp1	getIndexOfOuterSquare	approxPolyDP2	labelPolygons	labelCorners
  medianBlur	Canny	findContours	approxPolydp1	getIndexOfOuterSquare	approxPolyDP2	labelPolygons	labelCorners
- 0.022367	0.202961	0.013838	0.002765	0.000011	0.000575	0.000027	0.000065
- 0.021347	0.187956	0.013051	0.002945	0.000036	0.000580	0.000024	0.000065
- 0.022371	0.201245	0.013056	0.002814	0.000008	0.000495	0.000021	0.000057
+ 0.021993	0.184753	0.011575	0.002426	0.000006	0.000452	0.000023	0.000054
  0.022364	0.214968	0.015384	0.003387	0.000009	0.000699	0.000027	0.000075
+ 0.021037	0.171952	0.012280	0.002552	0.000008	0.000484	0.000024	0.000059
+ medianBlur	Canny	findContours	approxPolydp1	getIndexOfOuterSquare	approxPolyDP2	labelPolygons	labelCorners
+ medianBlur	Canny	findContours	approxPolydp1	getIndexOfOuterSquare	approxPolyDP2	labelPolygons	labelCorners
