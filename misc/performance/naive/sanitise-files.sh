@@ -19,12 +19,12 @@ echo $FILENAME
 awk -F ":" '{ print $2 }' $FILENAME > $FILENAME.tmp
 
 # grab headers
-awk 'NR==1' $FILENAME.tmp > overall-$FILENAME
-awk 'NR==3' $FILENAME.tmp > detectCorners-$FILENAME
+awk 'NR==1' $FILENAME.tmp > $FILENAME-overall
+awk 'NR==3' $FILENAME.tmp > $FILENAME-detectCorners
 
 # grab relevant rows, get 10 randomly using shuf
-awk 'NF==7 && NR%2==0' $FILENAME.tmp | shuf -n 10 >> overall-$FILENAME
-awk 'NF==8 && NR%2==0' $FILENAME.tmp | shuf -n 10 >> detectCorners-$FILENAME
+awk 'NF==7 && NR%2==0' $FILENAME.tmp | shuf -n 10 >> $FILENAME-overall
+awk 'NF==8 && NR%2==0' $FILENAME.tmp | shuf -n 10 >> $FILENAME-detectCorners
 
 # clean up
 rm $FILENAME.tmp

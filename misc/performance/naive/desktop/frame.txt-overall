@@ -1,0 +1,11 @@
+ frames	seconds	fps	capture	detectCorners	calibrateImagePoints	estimatePose
+ 20	0.662936	30.168825	0.420667	0.240277	0.000059	0.001647
+ frames	seconds	fps	capture	detectCorners	calibrateImagePoints	estimatePose
+ 20	0.663264	30.153906	0.434950	0.226242	0.000062	0.001721
+ 20	0.670209	29.841438	0.445936	0.222293	0.000054	0.001642
+ 20	0.670052	29.848430	0.446551	0.221500	0.000083	0.001632
+ frames	seconds	fps	capture	detectCorners	calibrateImagePoints	estimatePose
+ 20	0.669992	29.851103	0.424818	0.242879	0.000089	0.001907
+ 20	0.66319	30.157270	0.452496	0.208624	0.000057	0.001719
+ 20	0.66828	29.927575	0.432514	0.233796	0.000056	0.001632
+ frames	seconds	fps	capture	detectCorners	calibrateImagePoints	estimatePose
