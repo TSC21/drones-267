@@ -19,8 +19,8 @@ echo $FILENAME
 awk -F ":" '{ print $2 }' $FILENAME > $FILENAME.tmp
 
 # grab headers
-awk 'if NR==1' $FILENAME.tmp > overall-$FILENAME
-awk 'if NR==2' $FILENAME.tmp > detectCorners-$FILENAME
+awk 'NR==1' $FILENAME.tmp > overall-$FILENAME
+awk 'NR==3' $FILENAME.tmp > detectCorners-$FILENAME
 
 # grab relevant rows, get 10 randomly using shuf
 awk 'NF==7 && NR%2==0' $FILENAME.tmp | shuf -n 10 >> overall-$FILENAME
