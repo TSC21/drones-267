@@ -10,11 +10,6 @@
 [ INFO] [1398109666.575929932]: 20      2.09814 9.532230        0.303541        1.785768        0.002680        0.005234
 [ INFO] [1398109666.576879599]: medianBlur      Canny   findContours    approxPolydp1   getIndexOfOuterSquare   approxPolyDP2   labelPolygons       labelCorners
 [ INFO] [1398109666.577867640]: 1.093265        0.619068        0.049056        0.016218        0.000072        0.002070        0.000097    0.000217
-[ INFO] [1398109668.468114974]: Could not detect all corners!
-[ INFO] [1398109668.672364057]: frames  seconds fps     capture detectCorners   calibrateImagePoints    estimatePose
-[ INFO] [1398109668.676207390]: 20      2.09348 9.553466        0.303294        1.779558        0.002553        0.006145
-[ INFO] [1398109668.679911849]: medianBlur      Canny   findContours    approxPolydp1   getIndexOfOuterSquare   approxPolyDP2   labelPolygons       labelCorners
-[ INFO] [1398109668.683986640]: 1.093932        0.613068        0.048233        0.015974        0.000072        0.002070        0.000091    0.000215
  INFO] [1398109700.945031614]: frames  seconds fps     capture detectCorners   calibrateImagePoints    estimatePose
 [ INFO] [1398109700.946086531]: 20      2.10761 9.489422        0.300765        1.798098        0.002737        0.005082
 [ INFO] [1398109700.946993531]: medianBlur      Canny   findContours    approxPolydp1   getIndexOfOuterSquare   approxPolyDP2   labelPolygons       labelCorners
