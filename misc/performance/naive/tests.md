@@ -35,8 +35,8 @@ Beaglebone Black
 2. OpenCV 2.4.8 - cross compilation with NEON and VFP support
 
 ### Results Summary
-1. 
-2.
+1. 2.98 FPS
+2. 3.06 FPS
 
 HardKernel ODroid XU
 --------------------
@@ -58,9 +58,9 @@ HardKernel ODroid XU
 3. OpenCV 2.4.8 - cross compilation with NEON, VFP and TBB support
 
 ### Results Summary
-1. 
-2.
-3.
+1. 8.87 FPS
+2. 9.42 FPS
+3. 9.46 FPS
 
 
 Desktop Computer
@@ -77,7 +77,7 @@ Desktop Computer
 1. OpenCV 2.4.8 - [standard compilation][4] with TBB support enabled
 
 ### Results Summary
-1. 
+1. 30.01 FPS
 
 
 [1] http://docs.opencv.org/doc/tutorials/introduction/crosscompilation/arm_crosscompile_with_cmake.html
