@@ -10,7 +10,7 @@ We used a large fixed size landing pad for all tests of 80 cm by 80 cm, as descr
 
 All tests were run indoors in a room without windows and constant fluorescent tube light.
 
-No other processes were running on each computer aside from:
+No other user space processes were running on each computer aside from:
 - roscore
 - rosrun pose_estimator PoseEstimator
 
