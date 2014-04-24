@@ -34,7 +34,7 @@ Then run cmake, make and tar up the resulting files before scping to your target
 ```
 mkdir build_hardfp
 cd build_hardfp
-cmake -DCMAKE_BUILD_TYPE=RELEASE -DWITH_V4L=ON -DBUILD_NEW_PYTHON_SUPPORT=OFF  -DENABLE_NEON=ON -DENABLE_VFPV3=ON -DWITH_TBB=YES -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_TOOLCHAIN_FILE=../arm-gnueabi.toolchain.cmake ../../..
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DWITH_V4L=ON -DBUILD_NEW_PYTHON_SUPPORT=OFF  -DENABLE_NEON=ON -DENABLE_VFPV3=ON -DWITH_TBB=ON -DBUILD_TBB=ON -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_TOOLCHAIN_FILE=../arm-gnueabi.toolchain.cmake ../../..
 make -j4
 cd ~/workspace
 tar -zcvf opencv-2.4.8.tgz opencv-2.4.8
@@ -49,7 +49,7 @@ Log into the target computer. Note that you should ensure the extracted files ar
 ssh 192.168.1.10
 cd ~/workspace
 tar -xvf opencv-2.4.8.tgz
-cd platforms/linux/build_hardfp
+cd opencv-2.4.8/platforms/linux/build_hardfp
 sudo make install
 sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv.conf'
 sudo ldconfig
