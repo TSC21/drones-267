@@ -1,0 +1,1 @@
+http://stackoverflow.com/questions/9527881/is-there-any-arm-equivalent-of-intel-ipp
