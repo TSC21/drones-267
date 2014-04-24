@@ -43,7 +43,7 @@ scp opencv-2.4.8.tgz 192.168.1.10:~/workspace/
 
 You'll need to install libtbb on the target computer too. A compiled armhf .deb is [here][libtbb] for Ubuntu distributions. Download both this and libtbb-dev and install using `dpkg -i <path/to/file>`.
 
-Log into the Odroid. Note that you should ensure the extracted files are in the same location as the computer they were compiled on (i.e. /home/user/workspace/opencv-2.4.8 on both compilation computer and target computer) - since cmake and make have many hardcoded paths.
+Log into the target computer. Note that you should ensure the extracted files are in the same location as the computer they were compiled on (i.e. /home/user/workspace/opencv-2.4.8 on both compilation computer and target computer) - since cmake and make have many hardcoded paths.
 
 ```
 ssh 192.168.1.10
