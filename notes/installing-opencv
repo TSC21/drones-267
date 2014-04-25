@@ -1,21 +1,20 @@
 Installing Optimised OpenCV On ARM
 ==================================
 
-### Method 1: Compiling directly onboard
+These instructions describe how to cross-compile a version of OpenCV optimised for performance on a multi-core ARMhf embedded system running a variant of Ubuntu 13.10.
 
-Followed [this][1].
-
-Note that compiling OpenCV requires ~3 GB of disk space. (The compiled library
-is not nearly as huge, but the build process produces a lot of object files...)
-For this reason I compiled OpenCV on a SD card plugged into the BeagleBone.
-Once OpenCV is installed into /usr/local, we can safely remove the SD card and
-forget about it.
-
-Compiling OpenCV on the BeagleBone took about 3.5h.
+Cross compilation is necessary because native compilation will take upwards of 2 hours, depending on the board in question.
 
 
-### Method 2: Cross-compiling
+Optimisations
+-------------
+The instructions below enable a number of optimisations:
++ libjpeg-turbo, an ARM optimised JPEG library to use in-place of libjpeg within OpenCV
++ TBB support, Thread Building Blocks (TBB) is an Intel maintained library that allows easy use of thread abstractions. [Certain OpenCV functions][opencv-libtbb] have support for this which will make them more performant on multi-core systems.
++ NEON/VFPv3 specific compilation flags to allow use of NEON intrinsics. Again, certain OpenCV functions may include NEON optimised code paths. gcc will also attempt to optimise generated code for NEON.
 
+Instructions
+------------
 It's necessary to compile OpenCV from source, and optionally enable the ARM NEON extensions. You may also want to enable [TBB][tbb] support. You can cross compile using [these][2]instructions (I also followed a variant of the instructions in the script [here][3] to install). Building on a Linux Mint 16 host (= Ubuntu 13.10), I did the following:
 ```
 cd ~/workspace
@@ -24,6 +23,10 @@ mv download opencv-2.4.8.zip
 unzip opencv-2.4.8.zip
 sudo apt-get install cmake gcc-arm-linux-gnueabihf g++-4.8-arm-linux-gnueabihf libtbb-dev
 ```
+
+### Building libjpeg-turbo
+Add `-fPIC` to CFLAGS, CPPFLAGS and CXXFLAGS.
+
 
 Edit the cmake file and replace 4.6 with 4.8:
 ```
@@ -60,3 +63,5 @@ sudo ldconfig
 [3]: https://help.ubuntu.com/community/OpenCV
 [tbb]: https://www.threadingbuildingblocks.org/
 [libtbb]: https://launchpad.net/ubuntu/saucy/armhf/libtbb2
+[opencv-libtbb]: http://experienceopencv.blogspot.com/2011/07/parallelizing-loops-with-intel-thread.html
+[libjpeg-turbo8]: http://packages.ubuntu.com/saucy/libjpeg-turbo8
