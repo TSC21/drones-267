@@ -15,7 +15,7 @@ The instructions below enable a number of optimisations:
 
 Instructions
 ------------
-It's necessary to compile OpenCV from source and enable the ARM NEON extensions. You may also want to enable [TBB][tbb] support. You can cross compile using [these][2]instructions (I also followed a variant of the instructions in the script [here][3] to install). Building on a Linux Mint 16 host (= Ubuntu 13.10), I did the following.
+It's necessary to compile OpenCV from source and enable the ARM NEON extensions. You may also want to enable [TBB][tbb] support. You can cross compile using [these][2] instructions (I also followed a variant of the instructions in the script [here][3] to install). Building on a Linux Mint 16 host (= Ubuntu 13.10), I did the following.
 
 ### Getting dependencies
 ```
