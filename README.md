@@ -12,6 +12,8 @@ The goal is to develop a robust automated landing controller that uses a landing
 
 Our approach is based on the 2001 paper "A vision system for landing an unmanned aerial vehicle." by Sharp, Courtney S., Omid Shakernia, and S. Shankar Sastry. 
 
+This code is available under the LGPL v3. Please see the accompanying LICENSE.txt file for full terms.
+
 Hardware Set Up
 ---------------
 ### Autopilot
