@@ -23,9 +23,16 @@
 
 #include "ros/ros.h"
 #include "std_msgs/Float64MultiArray.h"
+#include <pthread.h>
 
 #include <sstream>
 using namespace std;
+
+const int NUM_THREADS = 2;
+int idle_threads = NUM_THREADS;
+bool thread_busy [NUM_THREADS];
+Mat thread_frames [NUM_THREADS];
+pthread_mutex_t idle_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 std_msgs::Float64MultiArray makeCornersMsg(Mat_<double> const imagePts)
 {
@@ -72,10 +79,6 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    Mat frame;
-    Mat_<double> imagePts;
-    Mat_<double> simplePose;
-
     // Set exposure and focus manually.
     // Seems to take effect after several frames.
     capture >> frame;
@@ -84,25 +87,86 @@ int main(int argc, char **argv)
     system("v4l2-ctl -d 0 -c focus_auto=0");
     system("v4l2-ctl -d 0 -c focus_absolute=0");
 
+
+    // Create threads
+    pthread_t threads [NUM_THREADS];
+    
+    for (int t=0; t<NUM_THREADS; ++t) {
+        pthread_create ( &threads[t], NULL, processFrame, *cornersPub, *simplePosePub, *thread_id );
+    }
+
     while(ros::ok()) {
+
+        Mat frame;
         capture >> frame;
-        imagePts = detectCorners(frame);
-        bool success = (imagePts.rows > 0);
-        if(success) {
-            imagePts = calibrateImagePoints(imagePts);
-            std_msgs::Float64MultiArray cornersMsg = makeCornersMsg(imagePts);
-            cornersPub.publish(cornersMsg);
-            simplePose = estimatePose(imagePts);
-            std_msgs::Float64MultiArray simplePoseMsg = \
-                makeSimplePoseMsg(simplePose);
-            simplePosePub.publish(simplePoseMsg);
-            ROS_INFO("Tick.");
-        } else {
-            // Don't publish anything this tick.
-            ROS_INFO("Could not detect all corners!");
+        
+        // DESPATCH FRAME TO THREAD IF THERE ARE THREADS AVAILABLE
+        pthread_mutex_lock ( &idle_threads_mutex );
+        if (idle_threads) {
+            int idle_thread = 0;
+            while (idle_thread < NUM_THREADS && thread_busy[idle_thread]) {
+                idle_thread++;
+            }
+            thread_frames[idle_thread] = frame;             
         }
+        pthread_mutex_unlock ( &idle_threads_mutex );
 
         ros::spinOnce();
         loopRate.sleep();
     }
+
+    for (int t=0; t<NUM_THREADS; ++t) {
+        pthread_join ( &threads[t], NULL );
+    }
+}
+
+
+void setThreadBusy (thread_id) {
+    pthread_mutex_lock ( &idle_threads_mutex );
+    idle_threads--;
+    thread_busy[thread_id] = true;
+    pthread_mutex_unlock ( &idle_threads_mutex );
+}
+
+void setThreadIdle (thread_id) {
+    pthread_mutex_lock ( &idle_threads_mutex );
+    idle_threads++;
+    thread_busy[thread_id] = false;
+    pthread_mutex_unlock ( &idle_threads_mutex );
+}
+
+void *processFrame (ros::Publisher *cornersPub, ros::Publisher *simplePosePub, int *thread_id) {
+    while (true)
+    {
+        if (thread_frames[thread_id]) {
+            setThreadBusy (thread_id);
+     
+            Mat frame = thread_frames[thread_id];
+            Mat_<double> imagePts;
+            Mat_<double> simplePose;
+            imagePts = detectCorners(frame);
+            bool success = (imagePts.rows > 0);
+            if(success) {
+                imagePts = calibrateImagePoints(imagePts);
+                std_msgs::Float64MultiArray cornersMsg = makeCornersMsg(imagePts);
+                cornersPub.publish(cornersMsg);
+                simplePose = estimatePose(imagePts);
+                std_msgs::Float64MultiArray simplePoseMsg = \
+                    makeSimplePoseMsg(simplePose);
+                simplePosePub.publish(simplePoseMsg);
+                ROS_INFO("Tick.");
+            } else {
+                // Don't publish anything this tick.
+                ROS_INFO("Could not detect all corners!");
+            }
+
+            frame.clear();
+            setThreadIdle (thread_id);
+        }
+    }
+
+        
+
+
+
 }
