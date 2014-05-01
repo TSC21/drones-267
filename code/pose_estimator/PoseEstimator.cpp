@@ -28,12 +28,14 @@
 #include <sstream>
 using namespace std;
 
-const int NUM_THREADS = 2;
-int idle_threads = NUM_THREADS;
+const int NUM_THREADS = 6;
+pthread_t threads [NUM_THREADS];
 bool thread_busy [NUM_THREADS];
-bool thread_has_frame [NUM_THREADS];
 Mat thread_frames [NUM_THREADS];
-pthread_mutex_t idle_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t thread_cond[NUM_THREADS] = {PTHREAD_COND_INITIALIZER};
+pthread_mutex_t thread_cond_mutexes[NUM_THREADS] = {PTHREAD_MUTEX_INITIALIZER};
+pthread_mutex_t thread_busy_mutex = PTHREAD_MUTEX_INITIALIZER;
+bool work = true;
 
 ros::Publisher cornersPub;
 ros::Publisher simplePosePub;
@@ -61,52 +63,70 @@ std_msgs::Float64MultiArray makeSimplePoseMsg(Mat_<double> const simplePose)
 }
 
 void setThreadBusy (int thread_id) {
-    pthread_mutex_lock ( &idle_threads_mutex );
-    idle_threads--;
+    pthread_mutex_lock ( &thread_busy_mutex );
     thread_busy[thread_id] = true;
-    pthread_mutex_unlock ( &idle_threads_mutex );
+    pthread_mutex_unlock ( &thread_busy_mutex );
 }
 
 void setThreadIdle (int thread_id) {
-    pthread_mutex_lock ( &idle_threads_mutex );
-    idle_threads++;
+    pthread_mutex_lock ( &thread_busy_mutex );
     thread_busy[thread_id] = false;
-    pthread_mutex_unlock ( &idle_threads_mutex );
+    pthread_mutex_unlock ( &thread_busy_mutex );
+}
+
+bool do_work()
+{
+    pthread_mutex_lock ( &thread_busy_mutex );
+    bool do_work = work;
+    pthread_mutex_unlock ( &thread_busy_mutex );
+    return do_work;
+}
+
+bool stop_work ()
+{
+    pthread_mutex_lock ( &thread_busy_mutex );
+    work = false;
+    pthread_mutex_unlock ( &thread_busy_mutex );
+
+    for (int t=0; t<NUM_THREADS; ++t) {
+        ROS_INFO("Waiting for thread %d to join", t);
+        pthread_join ( threads[t], NULL );
+    }
 }
 
 void *processFrame (void *arg) {
     int thread_id = *(int *)arg;
-    while (true)
-    {
-        if (thread_has_frame[thread_id]) {
-            setThreadBusy (thread_id);
-            Mat frame = thread_frames[thread_id];
-            Mat_<double> imagePts;
-            Mat_<double> simplePose;
-            imagePts = detectCorners(frame);
-            bool success = (imagePts.rows > 0);
-            if(success) {
-                imagePts = calibrateImagePoints(imagePts);
-                std_msgs::Float64MultiArray cornersMsg = makeCornersMsg(imagePts);
-                cornersPub.publish(cornersMsg);
-                simplePose = estimatePose(imagePts);
-                std_msgs::Float64MultiArray simplePoseMsg = \
-                    makeSimplePoseMsg(simplePose);
-                simplePosePub.publish(simplePoseMsg);
-                ROS_INFO("Tick.");
-            } else {
-                // Don't publish anything this tick.
-                ROS_INFO("Could not detect all corners!");
-            }
-
-            frame.release();
-            setThreadIdle (thread_id);
+    while(do_work()) {
+        pthread_cond_wait(&thread_cond[thread_id], &thread_cond_mutexes[thread_id]);
+        setThreadBusy (thread_id);
+        Mat frame = thread_frames[thread_id];
+        Mat_<double> imagePts;
+        Mat_<double> simplePose;
+        imagePts = detectCorners(frame);
+        bool success = (imagePts.rows > 0);
+        if(success) {
+            imagePts = calibrateImagePoints(imagePts);
+            std_msgs::Float64MultiArray cornersMsg = makeCornersMsg(imagePts);
+            cornersPub.publish(cornersMsg);
+            simplePose = estimatePose(imagePts);
+            std_msgs::Float64MultiArray simplePoseMsg = \
+                makeSimplePoseMsg(simplePose);
+            simplePosePub.publish(simplePoseMsg);
+            ROS_INFO("Tick.");
+        } else {
+            // Don't publish anything this tick.
+            ROS_INFO("Could not detect all corners!");
         }
+
+        frame.release();
+        setThreadIdle (thread_id);
     }
+    ROS_INFO("Thread %d exiting.", thread_id);
+    pthread_exit(NULL);
+    
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     ros::init(argc, argv, "PoseEstimator");
     ros::NodeHandle node;
     int const queueSize = 1000;
@@ -138,36 +158,41 @@ int main(int argc, char **argv)
     system("v4l2-ctl -d 0 -c focus_auto=0");
     system("v4l2-ctl -d 0 -c focus_absolute=0");
 
+    int thread_ids[NUM_THREADS];
 
-    // Create threads
-    pthread_t threads [NUM_THREADS];
-    
+    // Create threads    
     for (int t=0; t<NUM_THREADS; ++t) {
-        pthread_create ( &threads[t], NULL, processFrame, (void *) &t);
+        thread_ids[t] = t;
+        pthread_create ( &threads[t], NULL, processFrame, (void *) &thread_ids[t]);
     }
 
     while(ros::ok()) {
 
         Mat frame;
         capture >> frame;
-        
-        // DESPATCH FRAME TO THREAD IF THERE ARE THREADS AVAILABLE
-        pthread_mutex_lock ( &idle_threads_mutex );
-        if (idle_threads) {
-            int idle_thread = 0;
-            while (idle_thread < NUM_THREADS && thread_busy[idle_thread]) {
-                idle_thread++;
+
+        // Despatch frame to an available thread
+        pthread_mutex_lock ( &thread_busy_mutex );
+        int idle_thread = -1;
+
+        for (int t = 0; t < NUM_THREADS; ++t) {
+            if (!thread_busy[t]) {
+                idle_thread = t;
+                break;
             }
-            thread_frames[idle_thread] = frame;
-            thread_has_frame[idle_thread] = true;
         }
-        pthread_mutex_unlock ( &idle_threads_mutex );
+
+        pthread_mutex_unlock ( &thread_busy_mutex );
+
+        if (idle_thread > -1) {
+            thread_frames[idle_thread] = frame;    
+            pthread_cond_signal(&thread_cond[idle_thread]);    
+        }
 
         ros::spinOnce();
-        loopRate.sleep();
+        // loopRate.sleep();
     }
-
-    for (int t=0; t<NUM_THREADS; ++t) {
-        pthread_join ( threads[t], NULL );
-    }
+    ROS_INFO("Master stopping work");
+    stop_work();
+    return 0;
 }
