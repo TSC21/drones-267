@@ -232,146 +232,139 @@ Mat_<double> detectCorners(
     char const* cannyWindowHandle,
     char const* contourWindowHandle)
 {
-    if(inputWindowHandle) 
+	if (inputWindowHandle)
 	{
-        imshow(inputWindowHandle, frame);
-    }
+		imshow(inputWindowHandle, frame);
+	}
 
-    Mat cannyImage;
-    Mat filteredImage;
+	Mat cannyImage;
     double timer = readTimer();
-
-    // GaussianBlur(frame, filteredImage, Size(3,3), 0, 0);
-    medianBlur(frame, filteredImage, 3);
-    timer = getDifferenceAndIncrement(timer, &counters[0], 0);
-    Canny(filteredImage, cannyImage, 50, 200, 3);
+	Canny(frame, cannyImage, 50, 200, 3);
     timer = getDifferenceAndIncrement(timer, &counters[0], 1);
-    if(cannyWindowHandle) 
-	{
-        imshow(cannyWindowHandle, cannyImage);
-    }
 
-    vector<Vec4i> hierarchy;
-    vector<vector<Point> > contours;
-    findContours(
-        cannyImage,
-        contours,
-        hierarchy,
-        CV_RETR_TREE,
-        CV_CHAIN_APPROX_SIMPLE,
-        Point(0, 0));
+	if (cannyWindowHandle)
+	{
+		imshow(cannyWindowHandle, cannyImage);
+	}
+
+	vector<Vec4i> hierarchy;
+	vector<vector<Point> > contours;
+	findContours(
+		cannyImage,
+		contours,
+		hierarchy,
+		CV_RETR_TREE,
+		CV_CHAIN_APPROX_SIMPLE,
+		Point(0, 0));
     timer = getDifferenceAndIncrement(timer, &counters[0], 2);
-    vector<Point> approx;
-    int *parentContours = new int[contours.size()]; //TODO: Rename this to numberOfChildContours
-    for(int i = 0; i < contours.size(); i++) {
-        parentContours[i] = 0;
-    }
-    vector<int> selectedContours;
-    for (int i=0; i<contours.size(); i++)
-    {
-        if (hierarchy[i].val[3] == -1) 
+	vector<Point> approx;
+	vector< vector<Point> > quadrilaterals;
+	int *numberOfChildContours = new int[contours.size()];
+	for (int i = 0; i < contours.size(); i++) {
+		numberOfChildContours[i] = 0;
+	}
+
+	vector<int> quadrilateralIndices;
+	for (int i = 0; i<contours.size(); i++)
+	{
+		if (contours[i].size() < 4 || hierarchy[i].val[3] == -1)
 		{
-            continue;
-        }
-        approxPolyDP(
-			Mat(contours[i]), 
-			approx, 
-			arcLength(Mat(contours[i]), true) * APPROX_POLY_PARAMETER, 
+			continue;
+		}
+		approxPolyDP(
+			Mat(contours[i]),
+			approx,
+			arcLength(Mat(contours[i]), true) * APPROX_POLY_PARAMETER,
 			true);
-        if (approx.size() == 4 &&
-            fabs(contourArea(Mat(approx))) > 100 &&
-            isContourConvex(Mat(approx)))
-        {
-            parentContours[hierarchy[i].val[3]]++;
-            selectedContours.push_back(i);
-        }
-    }
+
+		if (approx.size() == 4 &&
+			fabs(contourArea(Mat(approx))) > 100 &&
+			isContourConvex(Mat(approx)))
+		{
+			numberOfChildContours[hierarchy[i].val[3]]++;
+			quadrilateralIndices.push_back(i);
+			quadrilaterals.push_back(approx);
+		}
+	}
     timer = getDifferenceAndIncrement(timer, &counters[0], 3);
 
-    int indexOfOuterSquare = getIndexOfOuterSquare(parentContours, contours.size());
+	int indexOfOuterSquare = getIndexOfOuterSquare(numberOfChildContours, contours.size());
     timer = getDifferenceAndIncrement(timer, &counters[0], 4);
-    bool allCornersDetected = (parentContours[indexOfOuterSquare] == 6);
-    delete[] parentContours;
-    parentContours = 0;
+	bool allCornersDetected = (numberOfChildContours[indexOfOuterSquare] == 6);
+	delete[] numberOfChildContours;
+	numberOfChildContours = NULL;
 
-    // If all squares are not detected, return failure.
-    if (!allCornersDetected)
+	// If all squares are not detected, return failure.
+	if (!allCornersDetected)
 	{
-        if(contourWindowHandle) 
+		if (contourWindowHandle)
 		{
-            Mat contourImg = Mat::zeros(cannyImage.size(), CV_8UC3);
-            imshow(contourWindowHandle, contourImg);
-        }
-        return Mat_<double>();  // empty
-    }
+			Mat contourImg = Mat::zeros(cannyImage.size(), CV_8UC3);
+			imshow(contourWindowHandle, contourImg);
+		}
+		return Mat_<double>();  // empty
+	}
 
-    int cIndex, polygonIndex = 0;
-    double maxPolyArea = 0, PolyArea = 0;
-    _Polygon Polygons[6];
-    Moments mo;
+	int cIndex, polygonIndex = 0;
+	double maxPolyArea = 0, PolyArea = 0;
+	_Polygon Polygons[6];
+	Moments mo;
 
-    int orderOfPolygons[6] = {0};
-    int contourIndices[6];
-    for (int i=0; i < selectedContours.size(); i++)
-    {
-        cIndex = selectedContours[i];
-        if (hierarchy[cIndex].val[3] != indexOfOuterSquare) 
+	int orderOfPolygons[6] = { 0 };
+	int contourIndices[6];
+	for (int i = 0; i < quadrilateralIndices.size(); i++)
+	{
+		cIndex = quadrilateralIndices[i];
+		if (hierarchy[cIndex].val[3] != indexOfOuterSquare)
 		{
-            continue;
-        }
-        //TODO: Do we really need to call this again? We do it once above for each 'selected contour'
-        approxPolyDP(
-            Mat(contours[cIndex]),
-            approx,
-            arcLength(Mat(contours[cIndex]), true) * APPROX_POLY_PARAMETER,
-            true);
-        PolyArea = fabs(contourArea(Mat(approx)));
-        Polygons[polygonIndex].Corners = approx;
-        mo = moments(contours[cIndex], false);
-        Polygons[polygonIndex].Center = Point2f(mo.m10/mo.m00 , mo.m01/mo.m00);
-        if (PolyArea > maxPolyArea)
-        {
-            maxPolyArea = PolyArea;
-            orderOfPolygons[0] = polygonIndex;
-        }
-        contourIndices[polygonIndex] = cIndex;
-        polygonIndex++;
-    }
-
+			continue;
+		}
+		
+		PolyArea = fabs(contourArea(Mat(quadrilaterals[i])));
+		Polygons[polygonIndex].Corners = quadrilaterals[i];
+		mo = moments(contours[cIndex], false);
+		Polygons[polygonIndex].Center = Point2f(mo.m10 / mo.m00, mo.m01 / mo.m00);
+		if (PolyArea > maxPolyArea)
+		{
+			maxPolyArea = PolyArea;
+			orderOfPolygons[0] = polygonIndex;
+		}
+		contourIndices[polygonIndex] = cIndex;
+		polygonIndex++;
+	}
     timer = getDifferenceAndIncrement(timer, &counters[0], 5);
-
-    Point2f Corners[24];
-    labelPolygons(Polygons, orderOfPolygons);
+	Point2f Corners[24];
+	labelPolygons(Polygons, orderOfPolygons);
     timer = getDifferenceAndIncrement(timer, &counters[0], 6);
-    labelCorners(Polygons, orderOfPolygons, Corners);
+	labelCorners(Polygons, orderOfPolygons, Corners);
     timer = getDifferenceAndIncrement(timer, &counters[0], 7);
 
-    if(contourWindowHandle) 
+	if (contourWindowHandle)
 	{
-        Mat contourImg = Mat::zeros(cannyImage.size(), CV_8UC3);
-        for(int i = 0; i < 6; i++) 
+		Mat contourImg = Mat::zeros(cannyImage.size(), CV_8UC3);
+		for (int i = 0; i < 6; i++)
 		{
-            cIndex = contourIndices[i];
-            drawContours(
-                contourImg,
-                contours,
-                cIndex,
-                Scalar(255,0,0),
-                1, 8,
-                hierarchy,
-                0,
-                Point());
-        }
-        drawPolygonLabels(contourImg, Polygons, orderOfPolygons);
-        drawCornerLabels(contourImg, Corners);
-        imshow(contourWindowHandle, contourImg);
-    }
+			cIndex = contourIndices[i];
+			drawContours(
+				contourImg,
+				contours,
+				cIndex,
+				Scalar(255, 0, 0),
+				1, 8,
+				hierarchy,
+				0,
+				Point());
+		}
+		drawPolygonLabels(contourImg, Polygons, orderOfPolygons);
+		drawCornerLabels(contourImg, Corners);
+		imshow(contourWindowHandle, contourImg);
+	}
 
-    Mat_<double> cornerMatrix(24, 2);
-    for(int i = 0; i < 24; i++) 
+	Mat_<double> cornerMatrix(24, 2);
+	for (int i = 0; i < 24; i++)
 	{
-        cornerMatrix(i, 0) = Corners[i].x;
-        cornerMatrix(i, 1) = Corners[i].y;
-    }
-    return cornerMatrix;
+		cornerMatrix(i, 0) = Corners[i].x;
+		cornerMatrix(i, 1) = Corners[i].y;
+	}
+	return cornerMatrix;
 }
