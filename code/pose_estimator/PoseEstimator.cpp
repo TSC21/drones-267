@@ -24,9 +24,27 @@
 
 #include "ros/ros.h"
 #include "std_msgs/Float64MultiArray.h"
+#include <pthread.h>
 
 #include <sstream>
 using namespace std;
+
+const int NUM_THREADS = 2;
+pthread_t threads [NUM_THREADS];
+bool thread_busy [NUM_THREADS];
+Mat thread_frames [NUM_THREADS];
+pthread_cond_t thread_cond[NUM_THREADS] = {PTHREAD_COND_INITIALIZER};
+pthread_mutex_t thread_cond_mutexes[NUM_THREADS] = {PTHREAD_MUTEX_INITIALIZER};
+pthread_mutex_t thread_busy_mutex = PTHREAD_MUTEX_INITIALIZER;
+bool work = true;
+
+//Profiling variables
+int framesProcessed = 0;
+double captureTime = 0 , detectCornersTime = 0, calibrateImagePointsTime = 0, estimatePoseTime = 0;
+double detectCornersTimes[8] = {0};
+
+ros::Publisher cornersPub;
+ros::Publisher simplePosePub;
 
 std_msgs::Float64MultiArray makeCornersMsg(Mat_<double> const imagePts)
 {
@@ -66,10 +84,81 @@ int readInt( int argc, char **argv, const char *option, int default_value )
     return default_value;
 }
 
+void setThreadBusy (int thread_id) {
+    pthread_mutex_lock ( &thread_busy_mutex );
+    thread_busy[thread_id] = true;
+    pthread_mutex_unlock ( &thread_busy_mutex );
+}
+
+void setThreadIdle (int thread_id) {
+    pthread_mutex_lock ( &thread_busy_mutex );
+    thread_busy[thread_id] = false;
+    pthread_mutex_unlock ( &thread_busy_mutex );
+}
+
+bool do_work()
+{
+    pthread_mutex_lock ( &thread_busy_mutex );
+    bool do_work = work;
+    pthread_mutex_unlock ( &thread_busy_mutex );
+    return do_work;
+}
+
+bool stop_work ()
+{
+    pthread_mutex_lock ( &thread_busy_mutex );
+    work = false;
+    pthread_mutex_unlock ( &thread_busy_mutex );
+
+    for (int t=0; t<NUM_THREADS; ++t) {
+        ROS_INFO("Waiting for thread %d to join", t);
+        pthread_join ( threads[t], NULL );
+    }
+}
+
+void *processFrame (void *arg) {
+    int thread_id = *(int *)arg;
+    double lastTime = 0;
+    while(do_work()) {
+        pthread_cond_wait(&thread_cond[thread_id], &thread_cond_mutexes[thread_id]);
+        setThreadBusy (thread_id);
+        Mat frame = thread_frames[thread_id];
+        Mat_<double> imagePts;
+        Mat_<double> simplePose;
+        lastTime = readTimer();
+        imagePts = detectCorners(frame, &detectCornersTimes[0]);
+        lastTime = getDifferenceAndIncrement(lastTime, &detectCornersTime);
+        bool success = (imagePts.rows > 0);
+        if(success) {
+            imagePts = calibrateImagePoints(imagePts);
+            lastTime = getDifferenceAndIncrement(lastTime, &calibrateImagePointsTime);
+            std_msgs::Float64MultiArray cornersMsg = makeCornersMsg(imagePts);
+            cornersPub.publish(cornersMsg);
+            simplePose = estimatePose(imagePts);
+            lastTime = getDifferenceAndIncrement(lastTime, &estimatePoseTime);
+            std_msgs::Float64MultiArray simplePoseMsg = \
+                makeSimplePoseMsg(simplePose);
+            simplePosePub.publish(simplePoseMsg);
+            ROS_INFO("Tick.");
+        } else {
+            // Don't publish anything this tick.
+            // ROS_INFO("Could not detect all corners!");
+        }
+
+        frame.release();
+        framesProcessed++;
+        setThreadIdle (thread_id);
+    }
+    ROS_INFO("Thread %d exiting.", thread_id);
+    pthread_exit(NULL);
+    
+}
+
+
+
 int main(int argc, char **argv)
 {
     int loopFrequency = readInt ( argc, argv, "-l", -1);
-    int framesProcessed = 0;
 
     ros::init(argc, argv, "PoseEstimator");
     ros::NodeHandle node;
@@ -78,12 +167,12 @@ int main(int argc, char **argv)
 
     // "corners" message: [x1, y1, ..., x24, y24] -- contains the image
     // coordinates of the 24 corners, in the order described in the paper
-    ros::Publisher cornersPub = \
+    cornersPub = \
         node.advertise<std_msgs::Float64MultiArray>("corners", queueSize);
 
     // "simplePose" message: [x, y, z, yaw] -- contains the estimate
     // of the camera pose w.r.t. the landing pad
-    ros::Publisher simplePosePub = \
+    simplePosePub = \
         node.advertise<std_msgs::Float64MultiArray>("simplePose", queueSize);
 
     VideoCapture capture(0);
@@ -92,45 +181,50 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    Mat frame;
-    Mat_<double> imagePts;
-    Mat_<double> simplePose;
-
     // Set exposure and focus manually.
     // Seems to take effect after several frames.
-    capture >> frame;
+    Mat temp_frame;
+    capture >> temp_frame;
+    temp_frame.release();
     system("v4l2-ctl -d 0 -c exposure_auto=1");
     system("v4l2-ctl -d 0 -c exposure_absolute=180");
     system("v4l2-ctl -d 0 -c focus_auto=0");
     system("v4l2-ctl -d 0 -c focus_absolute=0");
 
+    int thread_ids[NUM_THREADS];
+
+    // Create threads    
+    for (int t=0; t<NUM_THREADS; ++t) {
+        thread_ids[t] = t;
+        pthread_create ( &threads[t], NULL, processFrame, (void *) &thread_ids[t]);
+    }
+
     double startTime = readTimer();
     double totalTime = startTime;
-    double lastLoopTime = 0, captureTime = 0 , detectCornersTime = 0, calibrateImagePointsTime = 0, estimatePoseTime = 0;
-    double detectCornersTimes[8] = {0};
-
+    double lastLoopTime = 0;
+    
     while(ros::ok()) {
         lastLoopTime = readTimer();
+        Mat frame;
         capture >> frame;
         lastLoopTime = getDifferenceAndIncrement(lastLoopTime, &captureTime);
-        imagePts = detectCorners(frame, &detectCornersTimes[0]);
-        lastLoopTime = getDifferenceAndIncrement(lastLoopTime, &detectCornersTime);
-        framesProcessed++;
-        bool success = (imagePts.rows > 0);
-        if(success) {
-            imagePts = calibrateImagePoints(imagePts);
-            lastLoopTime = getDifferenceAndIncrement(lastLoopTime, &calibrateImagePointsTime);
-            std_msgs::Float64MultiArray cornersMsg = makeCornersMsg(imagePts);
-            cornersPub.publish(cornersMsg);
-            simplePose = estimatePose(imagePts);
-            lastLoopTime = getDifferenceAndIncrement(lastLoopTime, &estimatePoseTime);
-            std_msgs::Float64MultiArray simplePoseMsg = \
-                makeSimplePoseMsg(simplePose);
-            simplePosePub.publish(simplePoseMsg);
-            ROS_INFO("Tick.");
-        } else {
-            // Don't publish anything this tick.
-            //ROS_INFO("Could not detect all corners!");
+
+        // Despatch frame to an available thread
+        pthread_mutex_lock ( &thread_busy_mutex );
+        int idle_thread = -1;
+
+        for (int t = 0; t < NUM_THREADS; ++t) {
+            if (!thread_busy[t]) {
+                idle_thread = t;
+                break;
+            }
+        }
+
+        pthread_mutex_unlock ( &thread_busy_mutex );
+
+        if (idle_thread > -1) {
+            thread_frames[idle_thread] = frame;    
+            pthread_cond_signal(&thread_cond[idle_thread]);    
         }
 
         ros::spinOnce();
@@ -151,4 +245,7 @@ int main(int argc, char **argv)
                 detectCornersTimes[i] = 0;
         }
     }
+    ROS_INFO("Master stopping work");
+    stop_work();
+    return 0;
 }

@@ -46,12 +46,12 @@ It's then necessary to add the `-fPIC` flag to various FLAGS variables in the ge
 
 Go into the Makefile with `vim Makefile` and add `-fPIC` to the end of the CFLAGS, CPPFLAGS and CXXFLAGS lines. (These are probably not all needed but I was tired of repeatedly compiling these libraries :).)
 
-You will need to install this on your target machine. Something like the following (assuming you've copied the files over already):
+Since we're statically linking this into OpenCV, you don't need to install this permanently on your target machine. However, you will need to ensure it is available locally on the target machine at the same path that you use in the cmake command below when you eventually do a `sudo make install`. 
+
 ```
-mkdir /opt/libjpeg-turbo/
-sudo cp -rf ~/workspace/libjpeg-turbo-1.3.0/build/* /opt/libjpeg-turbo/
-sudo sh -c 'echo "/opt/libjpeg-turbo/lib" >> /etc/ld.so.conf.d/libjpeg-turbo.conf'
-sudo ldconfig
+cd ~/workspace
+tar -zcvf libjpeg-turbo-1.3.0.tgz libjpeg-turbo-1.3.0
+scp libjpeg-turbo-1.3.0.tgz 192.168.1.10:~/workspace/
 ```
 
 ### Building OpenCV
@@ -93,6 +93,7 @@ Log into the target computer. Note that you should ensure the extracted files ar
 ssh 192.168.1.10
 cd ~/workspace
 tar -xvf opencv-2.4.8.tgz
+tar -xvf libjpeg-turbo-1.3.0.tgz
 cd opencv-2.4.8/platforms/linux/build_hardfp
 sudo make install
 sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv.conf'
