@@ -24,6 +24,7 @@
 
 #include "ros/ros.h"
 #include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/Int16.h"
 #include <pthread.h>
 
 #include <sstream>
@@ -34,6 +35,7 @@ const int NUM_THREADS = 3;
 pthread_t threads [NUM_THREADS];
 bool thread_busy [NUM_THREADS];
 Mat thread_frames [NUM_THREADS];
+int thread_frame_ids [NUM_THREADS];
 pthread_cond_t thread_cond[NUM_THREADS] = {PTHREAD_COND_INITIALIZER};
 pthread_mutex_t thread_cond_mutexes[NUM_THREADS] = {PTHREAD_MUTEX_INITIALIZER};
 pthread_mutex_t thread_busy_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -44,6 +46,7 @@ int volatile  framesProcessed = 0;
 double captureTime = 0 , detectCornersTimes[NUM_THREADS] = {0}, calibrateImagePointsTimes[NUM_THREADS] = {0}, estimatePoseTimes[NUM_THREADS] = {0};
 double detectCornersSubTimes[NUM_THREADS][8] = {0};
 
+ros::Publisher frameNumberPub;
 ros::Publisher cornersPub;
 ros::Publisher simplePosePub;
 
@@ -130,6 +133,9 @@ void *processFrame (void *arg) {
         lastTime = readTimer();
         imagePts = detectCorners(frame, &detectCornersSubTimes[thread_id][0]);
         lastTime = getDifferenceAndIncrement(lastTime, &detectCornersTimes[thread_id]);
+        std_msgs::Int16 frame_id;
+        frame_id.data = thread_frame_ids[thread_id];
+        frameNumberPub.publish(frame_id);
         bool success = (imagePts.rows > 0);
         if(success) {
             imagePts = calibrateImagePoints(imagePts);
@@ -171,6 +177,8 @@ int main(int argc, char **argv)
     // of the camera pose w.r.t. the landing pad
     simplePosePub = \
         node.advertise<std_msgs::Float64MultiArray>("simplePose", queueSize);
+
+    frameNumberPub = node.advertise<std_msgs::Int16>("frameNumbers", queueSize);
 
     VideoCapture capture(0);
     if(!capture.isOpened()) {
@@ -216,25 +224,19 @@ int main(int argc, char **argv)
                 break;
             }
         }
-
         pthread_mutex_unlock ( &thread_busy_mutex );
 
         if (idle_thread > -1) {
             thread_frames[idle_thread] = frame;
-            pthread_cond_signal(&thread_cond[idle_thread]);    
+            thread_frame_ids[idle_thread] = framesProcessed;
+            pthread_cond_signal(&thread_cond[idle_thread]);
             ROS_INFO("Frame despatched to thread %d", idle_thread);
         } else {
             ROS_INFO("No free threads");
             frame.release();
         } 
 
-        ros::spinOnce();
-        if (loopFrequency)
-            loopRate.sleep();
-
-        ROS_INFO("Frames processed %d", framesProcessed);
-
-        if (framesProcessed == 20) {
+        if (framesProcessed >= 20) {
             totalTime = readTimer() - totalTime;
             double detectCornersTime = 0, calibrateImagePointsTime = 0, estimatePoseTime = 0,
             medianBlur = 0, canny = 0, findContours = 0, approx1 = 0, getIndex = 0, approx2 = 0,
@@ -272,6 +274,9 @@ int main(int argc, char **argv)
                     detectCornersSubTimes[t][i] = 0;
             }
         }
+        ros::spinOnce();
+        if (loopFrequency)
+            loopRate.sleep();
     }
     ROS_INFO("Master stopping work");
     stop_work();
