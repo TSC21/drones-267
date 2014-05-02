@@ -27,9 +27,10 @@
 #include <pthread.h>
 
 #include <sstream>
+
 using namespace std;
 
-const int NUM_THREADS = 2;
+const int NUM_THREADS = 3;
 pthread_t threads [NUM_THREADS];
 bool thread_busy [NUM_THREADS];
 Mat thread_frames [NUM_THREADS];
@@ -39,9 +40,9 @@ pthread_mutex_t thread_busy_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool work = true;
 
 //Profiling variables
-int framesProcessed = 0;
-double captureTime = 0 , detectCornersTime = 0, calibrateImagePointsTime = 0, estimatePoseTime = 0;
-double detectCornersTimes[8] = {0};
+int volatile  framesProcessed = 0;
+double captureTime = 0 , detectCornersTimes[NUM_THREADS] = {0}, calibrateImagePointsTimes[NUM_THREADS] = {0}, estimatePoseTimes[NUM_THREADS] = {0};
+double detectCornersSubTimes[NUM_THREADS][8] = {0};
 
 ros::Publisher cornersPub;
 ros::Publisher simplePosePub;
@@ -93,6 +94,7 @@ void setThreadBusy (int thread_id) {
 void setThreadIdle (int thread_id) {
     pthread_mutex_lock ( &thread_busy_mutex );
     thread_busy[thread_id] = false;
+    framesProcessed++;
     pthread_mutex_unlock ( &thread_busy_mutex );
 }
 
@@ -126,16 +128,16 @@ void *processFrame (void *arg) {
         Mat_<double> imagePts;
         Mat_<double> simplePose;
         lastTime = readTimer();
-        imagePts = detectCorners(frame, &detectCornersTimes[0]);
-        lastTime = getDifferenceAndIncrement(lastTime, &detectCornersTime);
+        imagePts = detectCorners(frame, &detectCornersSubTimes[thread_id][0]);
+        lastTime = getDifferenceAndIncrement(lastTime, &detectCornersTimes[thread_id]);
         bool success = (imagePts.rows > 0);
         if(success) {
             imagePts = calibrateImagePoints(imagePts);
-            lastTime = getDifferenceAndIncrement(lastTime, &calibrateImagePointsTime);
+            lastTime = getDifferenceAndIncrement(lastTime, &calibrateImagePointsTimes[thread_id]);
             std_msgs::Float64MultiArray cornersMsg = makeCornersMsg(imagePts);
             cornersPub.publish(cornersMsg);
             simplePose = estimatePose(imagePts);
-            lastTime = getDifferenceAndIncrement(lastTime, &estimatePoseTime);
+            lastTime = getDifferenceAndIncrement(lastTime, &estimatePoseTimes[thread_id]);
             std_msgs::Float64MultiArray simplePoseMsg = \
                 makeSimplePoseMsg(simplePose);
             simplePosePub.publish(simplePoseMsg);
@@ -146,15 +148,10 @@ void *processFrame (void *arg) {
         }
 
         frame.release();
-        framesProcessed++;
         setThreadIdle (thread_id);
     }
-    ROS_INFO("Thread %d exiting.", thread_id);
-    pthread_exit(NULL);
-    
+    pthread_exit(NULL);   
 }
-
-
 
 int main(int argc, char **argv)
 {
@@ -202,10 +199,10 @@ int main(int argc, char **argv)
     double startTime = readTimer();
     double totalTime = startTime;
     double lastLoopTime = 0;
-    
+    Mat frame;
+
     while(ros::ok()) {
-        lastLoopTime = readTimer();
-        Mat frame;
+        lastLoopTime = readTimer();    
         capture >> frame;
         lastLoopTime = getDifferenceAndIncrement(lastLoopTime, &captureTime);
 
@@ -223,26 +220,57 @@ int main(int argc, char **argv)
         pthread_mutex_unlock ( &thread_busy_mutex );
 
         if (idle_thread > -1) {
-            thread_frames[idle_thread] = frame;    
+            thread_frames[idle_thread] = frame;
             pthread_cond_signal(&thread_cond[idle_thread]);    
-        }
+            ROS_INFO("Frame despatched to thread %d", idle_thread);
+        } else {
+            ROS_INFO("No free threads");
+            frame.release();
+        } 
 
         ros::spinOnce();
         if (loopFrequency)
             loopRate.sleep();
 
+        ROS_INFO("Frames processed %d", framesProcessed);
+
         if (framesProcessed == 20) {
             totalTime = readTimer() - totalTime;
+            double detectCornersTime = 0, calibrateImagePointsTime = 0, estimatePoseTime = 0,
+            medianBlur = 0, canny = 0, findContours = 0, approx1 = 0, getIndex = 0, approx2 = 0,
+            labelPolygons = 0, labelCorners = 0;
+
+            for (int t = 0; t < NUM_THREADS; ++t) {
+                detectCornersTime += detectCornersTimes[t];
+                calibrateImagePointsTime += calibrateImagePointsTimes[t];
+                estimatePoseTime += estimatePoseTimes[t];
+                medianBlur += detectCornersSubTimes[t][0];
+                canny += detectCornersSubTimes[t][1];
+                findContours += detectCornersSubTimes[t][2];
+                approx1 += detectCornersSubTimes[t][3];
+                getIndex += detectCornersSubTimes[t][4];
+                approx2 += detectCornersSubTimes[t][5];
+                labelPolygons += detectCornersSubTimes[t][6];
+                labelCorners += detectCornersSubTimes[t][7];
+            }
+
             ROS_INFO("frames\tseconds\tfps\tcapture\tdetectCorners\tcalibrateImagePoints\testimatePose");
             ROS_INFO("%d\t%g\t%f\t%f\t%f\t%f\t%f",framesProcessed, totalTime, (framesProcessed/totalTime), captureTime, detectCornersTime, calibrateImagePointsTime, estimatePoseTime);
             ROS_INFO("medianBlur\tCanny\tfindContours\tapproxPolydp1\tgetIndexOfOuterSquare\tapproxPolyDP2\tlabelPolygons\tlabelCorners");
             ROS_INFO("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f", 
-                detectCornersTimes[0], detectCornersTimes[1], detectCornersTimes[2], detectCornersTimes[3], detectCornersTimes[4], detectCornersTimes[5], 
-                detectCornersTimes[6], detectCornersTimes[7]);
+                medianBlur, canny, findContours, approx1, getIndex, approx2, 
+                labelPolygons,labelCorners);
             totalTime  = readTimer();
-            framesProcessed = captureTime = detectCornersTime = calibrateImagePointsTime = estimatePoseTime = 0;
-            for (int i = 0; i<8; ++i)
-                detectCornersTimes[i] = 0;
+
+            framesProcessed = captureTime = 0;
+
+            for (int t = 0; t < NUM_THREADS; ++t) {
+                detectCornersTimes[t] = 0;
+                calibrateImagePointsTimes[t] = 0;
+                estimatePoseTimes[t] = 0;
+                for (int i = 0; i<8; ++i)
+                    detectCornersSubTimes[t][i] = 0;
+            }
         }
     }
     ROS_INFO("Master stopping work");
