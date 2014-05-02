@@ -2,6 +2,7 @@
 #include <cstdio>
 
 #define APPROX_POLY_PARAMETER 0.05
+#define PI 3.1416
 
 using namespace std;
 
@@ -204,11 +205,75 @@ int getIndexOfOuterSquare(int *Arr, size_t size)
     return indexOfMax;
 }
 
+void cannyEdgeDetector(Mat frame, Mat &edges, int threshold, double size = 3)
+{
+    // Gradient magnitudes and directions
+    Mat magX, magY, gradientDir, gradientMag, GX2, GY2;    
+    Sobel(frame, magX, CV_32F, 1, 0, size);
+    Sobel(frame, magY, CV_32F, 0, 1, size);
+    divide(magY, magX, gradientDir);
+    multiply(magX, magX, GX2);
+    multiply(magY, magY, GY2);
+    cv::sqrt(GX2 + GY2, gradientMag);
+    
+    MatIterator_<float>itr_mag = gradientMag.begin<float>();
+    MatIterator_<float>itr_dir = gradientDir.begin<float>();
+    MatIterator_<unsigned char>itr_edges = edges.begin<unsigned char>();
+
+	Point pos;
+	bool isEdge;
+	float deg;
+	
+	// Non-maximum suppression
+	while (itr_mag != gradientMag.end<float>())
+	{
+		deg = atan(*itr_dir) * 180 / PI;
+        while (deg < 0) 
+        	deg += 180;
+        *itr_dir = deg;
+ 
+        if (*itr_mag < threshold) 
+        {
+        	itr_mag++;
+        	itr_dir++; 
+        	itr_edges++;
+        	continue;
+		}
+		
+        pos = itr_edges.pos();
+        isEdge = true;
+
+        if ((deg > 112.5 && deg <= 157.5)
+        		&& ((pos.x < frame.cols-1 && pos.y > 0 && *itr_mag <= gradientMag.at<float>(pos.y-1, pos.x+1)) 
+            		|| (pos.x > 0 && pos.y < frame.rows-1 && *itr_mag <= gradientMag.at<float>(pos.y+1, pos.x-1)))) 
+            isEdge = false;
+        else if ((deg > 67.5 && deg <= 112.5)
+        		&& ((pos.y > 0 && *itr_mag <= gradientMag.at<float>(pos.y-1, pos.x)) 
+            		|| (pos.y < frame.rows-1 && *itr_mag <= gradientMag.at<float>(pos.y+1, pos.x))))
+           	isEdge = false;
+        else if ((deg > 22.5 && deg <= 67.5)
+        		&& ((pos.x > 0 && pos.y > 0 && *itr_mag <= gradientMag.at<float>(pos.y-1, pos.x-1)) 
+            		|| (pos.x < frame.cols-1 && pos.y < frame.rows-1 && *itr_mag <= gradientMag.at<float>(pos.y+1, pos.x+1)))) 
+			isEdge = false;
+        else
+        {
+            if ((pos.x > 0 && *itr_mag <= gradientMag.at<float>(pos.y, pos.x-1)) 
+            		|| (pos.x < frame.cols-1 && *itr_mag <= gradientMag.at<float>(pos.y, pos.x+1)))
+            	isEdge = false;
+        }
+        if (isEdge)
+            *itr_edges = 255;
+        
+        itr_mag++;
+    	itr_dir++; 
+        itr_edges++;
+	}
+}
 
 Mat_<double> detectCorners(
 	Mat const frame,
 	char const* inputWindowHandle,
-	char const* cannyWindowHandle,
+	char const* thresholdedWindowHandle,
 	char const* contourWindowHandle)
 {
 	if (inputWindowHandle)
@@ -216,17 +281,21 @@ Mat_<double> detectCorners(
 		imshow(inputWindowHandle, frame);
 	}
 
-	Mat cannyImage;
-	Canny(frame, cannyImage, 50, 200, 3);
-	if (cannyWindowHandle)
+	Mat grayImage, thresholdedImage;
+	cvtColor(frame, grayImage, CV_RGB2GRAY);
+	adaptiveThreshold(grayImage, thresholdedImage, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 75, 0);
+	
+	// Canny(frame, thresholdedImage, 50, 200, 3);
+	
+	if (thresholdedWindowHandle)
 	{
-		imshow(cannyWindowHandle, cannyImage);
+		imshow(thresholdedWindowHandle, thresholdedImage);
 	}
-
+	
 	vector<Vec4i> hierarchy;
 	vector<vector<Point> > contours;
 	findContours(
-		cannyImage,
+		thresholdedImage,
 		contours,
 		hierarchy,
 		CV_RETR_TREE,
@@ -272,7 +341,7 @@ Mat_<double> detectCorners(
 	{
 		if (contourWindowHandle)
 		{
-			Mat contourImg = Mat::zeros(cannyImage.size(), CV_8UC3);
+			Mat contourImg = Mat::zeros(thresholdedImage.size(), CV_8UC3);
 			imshow(contourWindowHandle, contourImg);
 		}
 		return Mat_<double>();  // empty
@@ -312,7 +381,7 @@ Mat_<double> detectCorners(
 
 	if (contourWindowHandle)
 	{
-		Mat contourImg = Mat::zeros(cannyImage.size(), CV_8UC3);
+		Mat contourImg = Mat::zeros(thresholdedImage.size(), CV_8UC3);
 		for (int i = 0; i < 6; i++)
 		{
 			cIndex = contourIndices[i];
