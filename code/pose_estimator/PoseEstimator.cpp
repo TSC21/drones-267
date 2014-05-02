@@ -166,9 +166,10 @@ int main(int argc, char **argv) {
         pthread_create ( &threads[t], NULL, processFrame, (void *) &thread_ids[t]);
     }
 
+    Mat frame;
+
     while(ros::ok()) {
 
-        Mat frame;
         capture >> frame;
 
         // Despatch frame to an available thread
@@ -186,11 +187,14 @@ int main(int argc, char **argv) {
 
         if (idle_thread > -1) {
             thread_frames[idle_thread] = frame;    
-            pthread_cond_signal(&thread_cond[idle_thread]);    
+            pthread_cond_signal(&thread_cond[idle_thread]);
+            ROS_INFO("Frame despatched to thread %d", idle_thread);  
+        } else {
+            ROS_INFO("No free threads");
+            frame.release();
         }
 
         ros::spinOnce();
-        // loopRate.sleep();
     }
     ROS_INFO("Master stopping work");
     stop_work();
