@@ -191,85 +191,6 @@ void drawCornerLabels(Mat & contourImg, Point2f (&Corners)[24])
     }
 }
 
-int getIndexOfOuterSquare(int *Arr, size_t size)
-{
-    int max = 0, indexOfMax = 0;
-    for (int i=0; i<size; i++)
-    {
-        if (Arr[i] > max)
-        {
-            max = Arr[i];
-            indexOfMax = i;
-        }
-    }
-    return indexOfMax;
-}
-
-void cannyEdgeDetector(Mat frame, Mat &edges, int threshold, double size = 3)
-{
-    // Gradient magnitudes and directions
-    Mat magX, magY, gradientDir, gradientMag, GX2, GY2;    
-    Sobel(frame, magX, CV_32F, 1, 0, size);
-    Sobel(frame, magY, CV_32F, 0, 1, size);
-    divide(magY, magX, gradientDir);
-    multiply(magX, magX, GX2);
-    multiply(magY, magY, GY2);
-    cv::sqrt(GX2 + GY2, gradientMag);
-    
-    MatIterator_<float>itr_mag = gradientMag.begin<float>();
-    MatIterator_<float>itr_dir = gradientDir.begin<float>();
-    MatIterator_<unsigned char>itr_edges = edges.begin<unsigned char>();
-
-	Point pos;
-	bool isEdge;
-	float deg;
-	
-	// Non-maximum suppression
-	while (itr_mag != gradientMag.end<float>())
-	{
-		deg = atan(*itr_dir) * 180 / PI;
-        while (deg < 0) 
-        	deg += 180;
-        *itr_dir = deg;
- 
-        if (*itr_mag < threshold) 
-        {
-        	itr_mag++;
-        	itr_dir++; 
-        	itr_edges++;
-        	continue;
-		}
-		
-        pos = itr_edges.pos();
-        isEdge = true;
-
-        if ((deg > 112.5 && deg <= 157.5)
-        		&& ((pos.x < frame.cols-1 && pos.y > 0 && *itr_mag <= gradientMag.at<float>(pos.y-1, pos.x+1)) 
-            		|| (pos.x > 0 && pos.y < frame.rows-1 && *itr_mag <= gradientMag.at<float>(pos.y+1, pos.x-1)))) 
-            isEdge = false;
-        else if ((deg > 67.5 && deg <= 112.5)
-        		&& ((pos.y > 0 && *itr_mag <= gradientMag.at<float>(pos.y-1, pos.x)) 
-            		|| (pos.y < frame.rows-1 && *itr_mag <= gradientMag.at<float>(pos.y+1, pos.x))))
-           	isEdge = false;
-        else if ((deg > 22.5 && deg <= 67.5)
-        		&& ((pos.x > 0 && pos.y > 0 && *itr_mag <= gradientMag.at<float>(pos.y-1, pos.x-1)) 
-            		|| (pos.x < frame.cols-1 && pos.y < frame.rows-1 && *itr_mag <= gradientMag.at<float>(pos.y+1, pos.x+1)))) 
-			isEdge = false;
-        else
-        {
-            if ((pos.x > 0 && *itr_mag <= gradientMag.at<float>(pos.y, pos.x-1)) 
-            		|| (pos.x < frame.cols-1 && *itr_mag <= gradientMag.at<float>(pos.y, pos.x+1)))
-            	isEdge = false;
-        }
-        if (isEdge)
-            *itr_edges = 255;
-        
-        itr_mag++;
-    	itr_dir++; 
-        itr_edges++;
-	}
-}
-
 Mat_<double> detectCorners(
 	Mat const frame,
 	char const* inputWindowHandle,
@@ -302,15 +223,16 @@ Mat_<double> detectCorners(
 		CV_CHAIN_APPROX_SIMPLE,
 		Point(0, 0));
 
+	int numberOfContours = contours.size();
 	vector<Point> approx;
 	vector< vector<Point> > quadrilaterals;
-	int *numberOfChildContours = new int[contours.size()];
-	for (int i = 0; i < contours.size(); i++) {
-		numberOfChildContours[i] = 0;
-	}
 
+	vector<int> numberOfChildContours;
+	vector<int> parentContours;
+	vector<int>::iterator itr;	
 	vector<int> quadrilateralIndices;
-	for (int i = 0; i<contours.size(); i++)
+	
+	for (int i = 0; i < numberOfContours; i++)
 	{
 		if (contours[i].size() < 4 || hierarchy[i].val[3] == -1)
 		{
@@ -325,16 +247,24 @@ Mat_<double> detectCorners(
 			fabs(contourArea(Mat(approx))) > 100 &&
 			isContourConvex(Mat(approx)))
 		{
-			numberOfChildContours[hierarchy[i].val[3]]++;
+			itr = find(parentContours.begin(), parentContours.end(), hierarchy[i].val[3]);
+			if (itr == parentContours.end())
+			{
+				parentContours.push_back(hierarchy[i].val[3]);
+				numberOfChildContours.push_back(1);
+			}
+			else
+			{
+				numberOfChildContours[distance(parentContours.begin(), itr)]++;
+			}
 			quadrilateralIndices.push_back(i);
 			quadrilaterals.push_back(approx);
 		}
 	}
-
-	int indexOfOuterSquare = getIndexOfOuterSquare(numberOfChildContours, contours.size());
-	bool allCornersDetected = (numberOfChildContours[indexOfOuterSquare] == 6);
-	delete[] numberOfChildContours;
-	numberOfChildContours = NULL;
+	
+	itr = max_element(numberOfChildContours.begin(), numberOfChildContours.end());
+	int indexOfOuterSquare = parentContours[distance(numberOfChildContours.begin(), itr)];
+	bool allCornersDetected = (*itr == 6);
 
 	// If all squares are not detected, return failure.
 	if (!allCornersDetected)
@@ -352,9 +282,10 @@ Mat_<double> detectCorners(
 	_Polygon Polygons[6];
 	Moments mo;
 
+	int numberOfSelectedContours = quadrilateralIndices.size();
 	int orderOfPolygons[6] = { 0 };
 	int contourIndices[6];
-	for (int i = 0; i < quadrilateralIndices.size(); i++)
+	for (int i = 0; i < numberOfSelectedContours; i++)
 	{
 		cIndex = quadrilateralIndices[i];
 		if (hierarchy[cIndex].val[3] != indexOfOuterSquare)
