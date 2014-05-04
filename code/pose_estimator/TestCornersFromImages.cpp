@@ -8,7 +8,7 @@ using namespace std;
 int main(int argc, char **argv)
 {
     char const* inputWindowHandle = "Input";
-    char const* cannyWindowHandle = "Canny";
+    char const* thresholdedWindowHandle = "Thresholded Image";
     char const* contourWindowHandle = "Contours";
     namedWindow(inputWindowHandle, CV_WINDOW_AUTOSIZE);
     // namedWindow(thresholdedWindowHandle, CV_WINDOW_AUTOSIZE);
