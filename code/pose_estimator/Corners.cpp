@@ -262,21 +262,21 @@ Mat_<double> detectCorners(
 		}
 	}
 	
-	itr = max_element(numberOfChildContours.begin(), numberOfChildContours.end());
-	int indexOfOuterSquare = parentContours[distance(numberOfChildContours.begin(), itr)];
-	bool allCornersDetected = (*itr == 6);
-
-	// If all squares are not detected, return failure.
-	if (!allCornersDetected)
+	if (numberOfChildContours.empty())
 	{
-		if (contourWindowHandle)
-		{
-			Mat contourImg = Mat::zeros(thresholdedImage.size(), CV_8UC3);
-			imshow(contourWindowHandle, contourImg);
-		}
+		// No contours detected! Am I looking at some crap?
+		return Mat_<double>();  // empty	
+	}
+	itr = max_element(numberOfChildContours.begin(), numberOfChildContours.end());
+
+	if (*itr != 6)
+	{
+		// Return if all squares are not detected
 		return Mat_<double>();  // empty
 	}
 
+	int indexOfOuterSquare = parentContours[distance(numberOfChildContours.begin(), itr)];
+	
 	int cIndex, polygonIndex = 0;
 	double maxPolyArea = 0, PolyArea = 0;
 	_Polygon Polygons[6];
