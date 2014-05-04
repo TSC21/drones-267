@@ -8,10 +8,10 @@ using namespace std;
 int main(int argc, char **argv)
 {
     char const* inputWindowHandle = "Input";
-    char const* cannyWindowHandle = "Canny";
+    char const* thresholdedWindowHandle = "Thresholded Image";
     char const* contourWindowHandle = "Contours";
     namedWindow(inputWindowHandle, CV_WINDOW_AUTOSIZE);
-    // namedWindow(cannyWindowHandle, CV_WINDOW_AUTOSIZE);
+    // namedWindow(thresholdedWindowHandle, CV_WINDOW_AUTOSIZE);
     namedWindow(contourWindowHandle, CV_WINDOW_AUTOSIZE);
 
     Mat frame;
@@ -34,9 +34,15 @@ int main(int argc, char **argv)
             frame,
             NULL,
             inputWindowHandle,
-            NULL, // cannyWindowHandle,
+            NULL, // thresholdedWindowHandle,
             contourWindowHandle);
         cout << corners << endl << endl;
+        
+        if (corners.empty())
+        {
+        	Mat contourImg = Mat::zeros(frame.size(), CV_8UC3);
+			imshow(contourWindowHandle, contourImg);
+		}
 
         if ((char)waitKey(0) == ESCAPE_KEY)
             break;
