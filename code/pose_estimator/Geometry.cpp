@@ -23,6 +23,7 @@
 #include <cstdio>
 using namespace std; // DEBUG
 
+const double SCALE_FACTOR = 0.5;
 
 Mat_<double> estimateRotTransl(
     Mat_<double> const worldPts,
@@ -130,64 +131,64 @@ Mat_<double> getWorldPts()
     }
 
     // Square A:
-    worldPtsHom(0, 0) = 200;
-    worldPtsHom(0, 1) = 200;
+    worldPtsHom(0, 0) = 200*SCALE_FACTOR;
+    worldPtsHom(0, 1) = 200*SCALE_FACTOR;
     worldPtsHom(1, 0) = 0;
-    worldPtsHom(1, 1) = 200;
+    worldPtsHom(1, 1) = 200*SCALE_FACTOR;
     worldPtsHom(2, 0) = 0;
     worldPtsHom(2, 1) = 0;
-    worldPtsHom(3, 0) = 200;
+    worldPtsHom(3, 0) = 200*SCALE_FACTOR;
     worldPtsHom(3, 1) = 0;
 
     // Square B:
-    worldPtsHom(4, 0) = -120;
-    worldPtsHom(4, 1) = 200;
-    worldPtsHom(5, 0) = -200;
-    worldPtsHom(5, 1) = 200;
-    worldPtsHom(6, 0) = -200;
-    worldPtsHom(6, 1) = 120;
-    worldPtsHom(7, 0) = -120;
-    worldPtsHom(7, 1) = 120;
+    worldPtsHom(4, 0) = -120*SCALE_FACTOR;
+    worldPtsHom(4, 1) = 200*SCALE_FACTOR;
+    worldPtsHom(5, 0) = -200*SCALE_FACTOR;
+    worldPtsHom(5, 1) = 200*SCALE_FACTOR;
+    worldPtsHom(6, 0) = -200*SCALE_FACTOR;
+    worldPtsHom(6, 1) = 120*SCALE_FACTOR;
+    worldPtsHom(7, 0) = -120*SCALE_FACTOR;
+    worldPtsHom(7, 1) = 120*SCALE_FACTOR;
 
     // Squre C:
-    worldPtsHom(8, 0) = -120;
-    worldPtsHom(8, 1) = 40;
-    worldPtsHom(9, 0) = -200;
-    worldPtsHom(9, 1) = 40;
-    worldPtsHom(10, 0) = -200;
-    worldPtsHom(10, 1) = -40;
-    worldPtsHom(11, 0) = -120;
-    worldPtsHom(11, 1) = -40;
+    worldPtsHom(8, 0) = -120*SCALE_FACTOR;
+    worldPtsHom(8, 1) = 40*SCALE_FACTOR;
+    worldPtsHom(9, 0) = -200*SCALE_FACTOR;
+    worldPtsHom(9, 1) = 40*SCALE_FACTOR;
+    worldPtsHom(10, 0) = -200*SCALE_FACTOR;
+    worldPtsHom(10, 1) = -40*SCALE_FACTOR;
+    worldPtsHom(11, 0) = -120*SCALE_FACTOR;
+    worldPtsHom(11, 1) = -40*SCALE_FACTOR;
 
     // Squre D:
-    worldPtsHom(12, 0) = -120;
-    worldPtsHom(12, 1) = -120;
-    worldPtsHom(13, 0) = -200;
-    worldPtsHom(13, 1) = -120;
-    worldPtsHom(14, 0) = -200;
-    worldPtsHom(14, 1) = -200;
-    worldPtsHom(15, 0) = -120;
-    worldPtsHom(15, 1) = -200;
+    worldPtsHom(12, 0) = -120*SCALE_FACTOR;
+    worldPtsHom(12, 1) = -120*SCALE_FACTOR;
+    worldPtsHom(13, 0) = -200*SCALE_FACTOR;
+    worldPtsHom(13, 1) = -120*SCALE_FACTOR;
+    worldPtsHom(14, 0) = -200*SCALE_FACTOR;
+    worldPtsHom(14, 1) = -200*SCALE_FACTOR;
+    worldPtsHom(15, 0) = -120*SCALE_FACTOR;
+    worldPtsHom(15, 1) = -200*SCALE_FACTOR;
 
     // Squre E:
-    worldPtsHom(16, 0) = 40;
-    worldPtsHom(16, 1) = -120;
-    worldPtsHom(17, 0) = -40;
-    worldPtsHom(17, 1) = -120;
-    worldPtsHom(18, 0) = -40;
-    worldPtsHom(18, 1) = -200;
-    worldPtsHom(19, 0) = 40;
-    worldPtsHom(19, 1) = -200;
+    worldPtsHom(16, 0) = 40*SCALE_FACTOR;
+    worldPtsHom(16, 1) = -120*SCALE_FACTOR;
+    worldPtsHom(17, 0) = -40*SCALE_FACTOR;
+    worldPtsHom(17, 1) = -120*SCALE_FACTOR;
+    worldPtsHom(18, 0) = -40*SCALE_FACTOR;
+    worldPtsHom(18, 1) = -200*SCALE_FACTOR;
+    worldPtsHom(19, 0) = 40*SCALE_FACTOR;
+    worldPtsHom(19, 1) = -200*SCALE_FACTOR;
 
     // Squre F:
-    worldPtsHom(20, 0) = 200;
-    worldPtsHom(20, 1) = -120;
-    worldPtsHom(21, 0) = 120;
-    worldPtsHom(21, 1) = -120;
-    worldPtsHom(22, 0) = 120;
-    worldPtsHom(22, 1) = -200;
-    worldPtsHom(23, 0) = 200;
-    worldPtsHom(23, 1) = -200;
+    worldPtsHom(20, 0) = 200*SCALE_FACTOR;
+    worldPtsHom(20, 1) = -120*SCALE_FACTOR;
+    worldPtsHom(21, 0) = 120*SCALE_FACTOR;
+    worldPtsHom(21, 1) = -120*SCALE_FACTOR;
+    worldPtsHom(22, 0) = 120*SCALE_FACTOR;
+    worldPtsHom(22, 1) = -200*SCALE_FACTOR;
+    worldPtsHom(23, 0) = 200*SCALE_FACTOR;
+    worldPtsHom(23, 1) = -200*SCALE_FACTOR;
 
     return worldPtsHom;
 }
