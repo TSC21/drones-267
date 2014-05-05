@@ -226,8 +226,6 @@ Mat_<double> detectCorners(
 	cvtColor(frame, grayImage, CV_RGB2GRAY);
 	adaptiveThreshold(grayImage, thresholdedImage, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 75, 0);
 	
-	// Canny(frame, thresholdedImage, 50, 200, 3);
-	
 	if (thresholdedWindowHandle)
 	{
 		imshow(thresholdedWindowHandle, thresholdedImage);
