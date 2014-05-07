@@ -10,6 +10,13 @@ rosdep update
 sudo -u vagrant echo "source /opt/ros/hydro/setup.bash" >> /home/vagrant/.bashrc
 source /opt/ros/hydro/setup.bash
 
+ln -s /usr/lib/x86_64-linux-gnu/libboost_signals.so /usr/lib/libboost_signals-mt.so
+ln -s /usr/lib/x86_64-linux-gnu/libboost_filesystem.so /usr/lib/libboost_filesystem-mt.so
+ln -s /usr/lib/x86_64-linux-gnu/libboost_regex.so /usr/lib/libboost_regex-mt.so
+ln -s /usr/lib/x86_64-linux-gnu/libboost_date_time.so /usr/lib/libboost_date_time-mt.so
+ln -s /usr/lib/x86_64-linux-gnu/libboost_system.so /usr/lib/libboost_system-mt.so
+ln -s /usr/lib/x86_64-linux-gnu/libboost_thread.so /usr/lib/libboost_thread-mt.so
+
 echo "SETTING UP CATKIN WORKSPACE"
 mkdir -p /home/vagrant/catkin_ws/src
 cd /home/vagrant/catkin_ws/src
@@ -49,3 +56,4 @@ echo "OpenCV" $version "ready to be used"
 
 echo "INSTALLING GIT"
 apt-get -yqq install git
+
