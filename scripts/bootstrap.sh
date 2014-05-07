@@ -29,7 +29,7 @@ sudo -u vagrant echo "source /home/vagrant/catkin_ws/devel/setup.bash" >> /home/
 ln -s /vagrant /home/vagrant/catkin_ws/src/drones-267
 chown -R vagrant.vagrant /home/vagrant/catkin_ws
 
-cd ~
+cd ~§
 echo "INSTALLING OPEN CV"
 version="$(wget -q -O - http://sourceforge.net/projects/opencvlibrary/files/opencv-unix | egrep -m1 -o '\"[0-9](\.[0-9])+' | cut -c2-)"
 echo "Installing OpenCV" $version
