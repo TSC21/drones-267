@@ -17,12 +17,10 @@
 *  You should have received a copy of the GNU General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 #include "Corners.h"
 #include <cstdio>
 
 #define APPROX_POLY_PARAMETER 0.05
-#define PI 3.1416
 
 using namespace std;
 
@@ -211,10 +209,25 @@ void drawCornerLabels(Mat & contourImg, Point2f (&Corners)[24])
     }
 }
 
+int getIndexOfOuterSquare(int *Arr, size_t size)
+{
+    int max = 0, indexOfMax = 0;
+    for (int i=0; i<size; i++)
+    {
+        if (Arr[i] > max)
+        {
+            max = Arr[i];
+            indexOfMax = i;
+        }
+    }
+    return indexOfMax;
+}
+
+
 Mat_<double> detectCorners(
 	Mat const frame,
 	char const* inputWindowHandle,
-	char const* thresholdedWindowHandle,
+	char const* cannyWindowHandle,
 	char const* contourWindowHandle)
 {
 	if (inputWindowHandle)
@@ -222,35 +235,32 @@ Mat_<double> detectCorners(
 		imshow(inputWindowHandle, frame);
 	}
 
-	Mat grayImage, thresholdedImage;
-	cvtColor(frame, grayImage, CV_RGB2GRAY);
-	adaptiveThreshold(grayImage, thresholdedImage, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 75, 0);
-	
-	if (thresholdedWindowHandle)
+	Mat cannyImage;
+	Canny(frame, cannyImage, 50, 200, 3);
+	if (cannyWindowHandle)
 	{
-		imshow(thresholdedWindowHandle, thresholdedImage);
+		imshow(cannyWindowHandle, cannyImage);
 	}
-	
+
 	vector<Vec4i> hierarchy;
 	vector<vector<Point> > contours;
 	findContours(
-		thresholdedImage,
+		cannyImage,
 		contours,
 		hierarchy,
 		CV_RETR_TREE,
 		CV_CHAIN_APPROX_SIMPLE,
 		Point(0, 0));
 
-	int numberOfContours = contours.size();
 	vector<Point> approx;
 	vector< vector<Point> > quadrilaterals;
+	int *numberOfChildContours = new int[contours.size()];
+	for (int i = 0; i < contours.size(); i++) {
+		numberOfChildContours[i] = 0;
+	}
 
-	vector<int> numberOfChildContours;
-	vector<int> parentContours;
-	vector<int>::iterator itr;	
 	vector<int> quadrilateralIndices;
-	
-	for (int i = 0; i < numberOfContours; i++)
+	for (int i = 0; i<contours.size(); i++)
 	{
 		if (contours[i].size() < 4 || hierarchy[i].val[3] == -1)
 		{
@@ -265,45 +275,36 @@ Mat_<double> detectCorners(
 			fabs(contourArea(Mat(approx))) > 100 &&
 			isContourConvex(Mat(approx)))
 		{
-			itr = find(parentContours.begin(), parentContours.end(), hierarchy[i].val[3]);
-			if (itr == parentContours.end())
-			{
-				parentContours.push_back(hierarchy[i].val[3]);
-				numberOfChildContours.push_back(1);
-			}
-			else
-			{
-				numberOfChildContours[distance(parentContours.begin(), itr)]++;
-			}
+			numberOfChildContours[hierarchy[i].val[3]]++;
 			quadrilateralIndices.push_back(i);
 			quadrilaterals.push_back(approx);
 		}
 	}
-	
-	if (numberOfChildContours.empty())
-	{
-		// No contours detected! Am I looking at some crap?
-		return Mat_<double>();  // empty	
-	}
-	itr = max_element(numberOfChildContours.begin(), numberOfChildContours.end());
 
-	if (*itr != 6)
+	int indexOfOuterSquare = getIndexOfOuterSquare(numberOfChildContours, contours.size());
+	bool allCornersDetected = (numberOfChildContours[indexOfOuterSquare] == 6);
+	delete[] numberOfChildContours;
+	numberOfChildContours = NULL;
+
+	// If all squares are not detected, return failure.
+	if (!allCornersDetected)
 	{
-		// Return if all squares are not detected
+		if (contourWindowHandle)
+		{
+			Mat contourImg = Mat::zeros(cannyImage.size(), CV_8UC3);
+			imshow(contourWindowHandle, contourImg);
+		}
 		return Mat_<double>();  // empty
 	}
 
-	int indexOfOuterSquare = parentContours[distance(numberOfChildContours.begin(), itr)];
-	
 	int cIndex, polygonIndex = 0;
 	double maxPolyArea = 0, PolyArea = 0;
 	_Polygon Polygons[6];
 	Moments mo;
 
-	int numberOfSelectedContours = quadrilateralIndices.size();
 	int orderOfPolygons[6] = { 0 };
 	int contourIndices[6];
-	for (int i = 0; i < numberOfSelectedContours; i++)
+	for (int i = 0; i < quadrilateralIndices.size(); i++)
 	{
 		cIndex = quadrilateralIndices[i];
 		if (hierarchy[cIndex].val[3] != indexOfOuterSquare)
@@ -330,7 +331,7 @@ Mat_<double> detectCorners(
 
 	if (contourWindowHandle)
 	{
-		Mat contourImg = Mat::zeros(thresholdedImage.size(), CV_8UC3);
+		Mat contourImg = Mat::zeros(cannyImage.size(), CV_8UC3);
 		for (int i = 0; i < 6; i++)
 		{
 			cIndex = contourIndices[i];
