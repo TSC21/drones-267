@@ -188,9 +188,9 @@ int main(int argc, char **argv) {
         if (idle_thread > -1) {
             thread_frames[idle_thread] = frame;    
             pthread_cond_signal(&thread_cond[idle_thread]);
-            ROS_INFO("Frame despatched to thread %d", idle_thread);  
+            //ROS_INFO("Frame despatched to thread %d", idle_thread);  
         } else {
-            ROS_INFO("No free threads");
+            //ROS_INFO("No free threads");
             frame.release();
         }
 
