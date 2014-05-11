@@ -56,11 +56,6 @@ void publishControlMsgs(std::vector<roscopter::RC> controlMsgs) {
 	}
 }
 
-void performNeutralAction() {
-	ROS_INFO("Sending neutral control message");
-	publishControlMsgs(getNeutralAction());	
-}
-
 void performStateAction() {
 	ROS_INFO("Sending control message");
 	publishControlMsgs(getStateAction());
@@ -152,7 +147,7 @@ void parseCommandLine(int argc, char **argv)
                 break;
             }
         }
-        if(i == POWER_OFF + 1) {
+        if(i == HOVERING + 1) {
             cerr << "Unrecognized start state." << endl;
             exit(1);
         }
