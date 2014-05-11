@@ -29,7 +29,7 @@
 \documentclass{acm_proc_article-sp}
 
 \usepackage{amsmath}
-\usepackage{caption}
+\usepackage[margin=0.5cm]{caption}
 \usepackage{float}
 \usepackage{graphicx} % support the \includegraphics command and options
 % for osx:
@@ -111,8 +111,7 @@ Hoang Nguyen\\
 \maketitle
 \begin{abstract}
 Current approaches for automated landing of unmanned aerial systems (UAS) are
-based on GPS localization, which we show is quite inaccurate. We optimise a previously implemented computer vision based pose estimation algorithm to run in real time on a low cost open source embedded computer using open source software. .
-\end{abstract}
+based on GPS localization, which we show is quite inaccurate. We optimise a previously implemented computer vision based pose estimation algorithm to run in real time on a low cost open source embedded computer using open source software. \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
@@ -651,7 +650,7 @@ Figures \ref{fig:beaglebone-fps} and \ref{fig:odroid-fps} show the increase in a
 \end{minipage}
 \end{figure*}
 
-\begin{figure*}[h!]
+\begin{figure*}[h]
 \centering
 \includegraphics[width=\textwidth]{images/performance/worst-to-best-detect-corners.png}
 \caption{Naive to optimised implementation: breakdown of \textit{Detect Corners} for BeagleBone and Odroid.}
