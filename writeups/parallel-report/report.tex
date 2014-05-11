@@ -129,13 +129,16 @@ Using a landing pad with a known design coupled with a webcam and computer on-bo
 
 The inner control loop of the ArduPilot autopilot software runs at 10 Hz - where it receives sensor data and outputs a control signal. This is deemed adequate for precise control of a UAS in all but the most extreme environmental conditions. Therefore, for pose estimation to be useful for UAS control, it is necessary to generate pose estimates at a rate of 10 Hz (or, 10 frames per second). Given that, in reality, certain frames are dropped due to motion blur, we strive for a rate of greater than 10 Hz.
 
-We first survey prior work in section \ref{sec:prior-work}, then describe our system architecture in section \ref{sec:system-description}. In section \ref{sec:approach} we detail our approach to optimisation and in section \ref{sec:results} we show the results of this approach.
+We first survey prior work in section 2, then describe our system architecture in section 3. In section 4 we detail our approach to optimisation and in section 5 we discuss the results of this approach.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Prior Work\label{sec:prior-work}}
+\section{Prior Work\label{prior-work}}
 Our naive implementation was the result of a previous project and a full description of prior work related to automated landing approaches are available in that paper \cite{berzanaccurate}. The algorithm implemented is described by Sharp et al. in \cite{sharp_et_al_2001} and the overall approach is the same, although the exact implementation details may vary slightly. In their implementation, using highly optimised custom C code, they were able to reach a frame rate of 30 frames per second. 
 
-We consider other prior work related to high performance embedded computing. Several efforts have bene made to explore the effect of parallelising certain robotics appliations but these assume use of a desktop computer and often make use of general purpose computing on the GPU frameworks like CUDA or OpenCL. This doesn't translate well to embedded computers due to the lack of vendor support for graphics chips that are provided. These chips often don't support heterogenous parallel programming languages, such as OpenCL or NVidia's CUDA. 
+We consider other prior work related to high performance embedded computing. Several efforts have been made to explore the effect of parallelising certain robotics appliations but these assume use of a desktop computer and often make use of general purpose computing on the GPU frameworks like CUDA or OpenCL. This doesn't translate well to embedded computers due to the lack of vendor support for graphics chips that are provided. These chips often don't support heterogenous parallel programming languages, such as OpenCL or NVidia's CUDA. 
+
+
+In \cite{catanzaro2009efficient}, Catanzaro et al. investigate approaches for high quality contour detection at speed. Since this is an integral part of our naive implementation, this is highly relevant. Their implementation is highly parallel, making use of data and thread level parallism, and performs several orders of magnitude faster than the naive approach at a similar quality level. However, their implementation uses CUDA. To reimplement this on an ARM architecture was beyond the scope of the project.
 
 However, there are several efforts looking at optimising performance for ARM-based processors \cite{mitra2013use}. This is driven by growing smartphone usage, nearly all of which use ARM processor designs. Qualcomm, in particular, provides an ARM-optimised computer vision library for Android called FastCV. While this is optimised for their own series of processors, it does have generic ARM optimisations that are manufacturer agnostic. Efforts have been made to explore OpenCV optimisation for real-time computer vision applications too \cite{pulli2012real}.
 
@@ -146,7 +149,7 @@ Other commercial entities, such as Cloud Cap Technologies, provide proprietary e
 Ultimately, this project's contribution is to demonstrate the tools and techniques that can be used to implement highly performant vision algorithms onboard a UAS using low-cost open source hardware and open source software.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{System Description\label{sec:system-description}}
+\section{System Description \label{sec:system-description}}
 The intention with this project was to re-use readily available hardware and software as much as possible. Along those lines, we made the decision to use several open source libraries and, as previously mentioned, two open source embedded computers. 
 
 While specific implementation details may only be covered briefly in this paper, detailed instructions, notes and the full source code is available online under the GNU Lesser General Public License at \url{https://github.com/ssk2/drones-267}.
@@ -189,7 +192,7 @@ Our first choice was the Beagleboard's BeagleBone Black, a single core computer 
 
 \subsection{Software Design}
 
-\subsubsection{Operating System and Library Setup\label{sec:roscopter}}
+\subsubsection{Operating System and Library Setup \label{sec:roscopter}}
 On each of these boards, we installed a supported (manufacturer supplied or recommended) variant of Ubuntu Linux, ROS Hydro and OpenCV from source. Where possible, we enabled support for the ARM specific NEON single instruction, multiple data  extensions to increase performance \cite{stotzer2013openmp}.
 
 We re-used existing libraries where possible. Substantial progress has been made on the \textbf{Robotics Operating System} (ROS), a framework and set of libraries that allow for a highly modular architecture with a natively supported robust publish/subscribe messaging system \cite{quigley2009ros}.  ROS also provides simple scheduling mechanisms to let processing happen in an event driven manner or at a fixed interval (e.g. 10Hz).
@@ -348,7 +351,7 @@ We began by systematically profiling our code to identify hotspots where a dispr
 \end{figure*}
 
 
-\subsection{Compiler Optimisations}
+\subsection{Compiler Optimisations \label{sec:compiler-opt}}
 gcc and other compilers offer a myriad of optional performance optimisations. For example, they offer user specified flags that cause the generated executable file to be optimised for a certain instruction set. When compiling libraries such as OpenCV for an embedded computer, it is typical to cross-compile; compilation on embedded computers typically takes many times longer. Cross-compilation is when compilation happens on a more powerful compilation computer that has available to it a compiler for the target architecture. In our case, compilation was on a quad-core x86 computer for an ARM target architecture. At this stage, it is possible to pass certain parameters to the compiler that permit it to use ARM NEON instructions in the generated binary code.
 
 NEON is an ``advanced SIMD instruction set" introduced in the ARMv7 architecture - the basis for all modern ARM processors. Single instruction, multiple data (SIMD) instructions are data parallel instructions that allow a single operation to be performed in parallel on two more operands. While the compiler has to be conservative in how it utilises these in the generated binary code so that correctness is guaranteed, these allow some performance gain.
@@ -362,7 +365,7 @@ We experimented with enabling multithreading functionality by compiling OpenCV w
 
 Secondly, we re-compiled OpenCV replacing the default JPEG parsing library, libjpeg, with a performance optimised variant called libjpeg-turbo. This claims to be 2.1 to 5.3x faster than the standard library \cite{libjpeg-turbo} and has ARM optimised code paths. Using this, it is possible to capture images at 30 frames per second on the BeagleBone Black \cite{bbb-30fps}.
 
-Note also that we were unable to use the Intel Integrated Performance Primitives (IPP) library. IPP is the primary method of compiling a high performance version of OpenCV. However, it accomplishes this by utilising significant customisation for x86 processors that implement instruction sets only avaiable on desktop computers (e.g. Streaming SIMD Extensions (SSE), Advanced Vector Extensions (AVX)). 
+Note also that we were unable to use the Intel Integrated Performance Primitives (IPP) library. IPP is the primary method of compiling a high performance version of OpenCV. However, it accomplishes this by utilising significant customisation for x86 processors that implement instruction sets only available on desktop computers (e.g. Streaming SIMD Extensions (SSE), Advanced Vector Extensions (AVX)). 
 
 \subsection{Single-threaded Optimisations}
 We considered two approaches to optimise our single-threaded implementation. Since the BeagleBone Black uses a single core processor, multi-threading is unlikely to have resulted in significant performance gains and so it was important to optimise the single-threaded version as much as possible to extract better performance from this board. 
@@ -442,7 +445,7 @@ To begin with, we benchmarked our naive implementation with no optimisations on 
 \end{table}%
 
 
-The desktop computer has no issue running at the maximum 30 FPS but both the BeagleBone and Odroid fail to give the necessary 10 Hz required for real-time control (as described in section \ref{sec:optimisation-techniques}). 
+The desktop computer has no issue running at the maximum 30 FPS but both the BeagleBone and Odroid fail to give the necessary 10 Hz required for real-time control. 
 
 There is a slight but obvious discrepancy between performance when the pad is in view and when the pad is not which only appears to manifest itself on the two ARM boards (the BeagleBone and Odroid). By profiling the steps of detect corners, the first four of which are shown for the Odroid in table \ref{tab:naive-frame-vs-no-frame}, we can begin to see why. Canny edge detection and finding contours takes very slightly longer on both boards when there is no pad in view. Intuitively this is because when the pad is in view, it occludes a significant part of the image. The pad is constructed of very simple quadrilaterals that are atypical of the many small heterogeneous shapes that a normal frame is composed of. For the remaining tests the figures represent performance when the pad is in view.
 
@@ -482,7 +485,7 @@ Figure \ref{fig:naive-breakdown-overall} show a breakdown of the naive implement
 \subsection{Performance of Naive Implementation with Optimised Libraries}
 
 
-The next stage of optimisation was to adapt the libraries used onboard. OpenCV was the primary focus and we did three things, as described in \ref{sec:compiler-opt}:
+The next stage of optimisation was to adapt the libraries used onboard. OpenCV was the primary focus and we did three things, as described in section \ref{sec:compiler-opt}:
 \begin{enumerate}
 \setlength{\itemsep}{0pt}
 \setlength{\parskip}{0pt}
