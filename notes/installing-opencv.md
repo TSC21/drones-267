@@ -19,7 +19,7 @@ It's necessary to compile OpenCV from source and enable the ARM NEON extensions.
 
 ### Getting dependencies
 ```
-sudo apt-get install cmake gcc-arm-linux-gnueabihf g++-4.8-arm-linux-gnueabihf libtbb-dev
+sudo apt-get install cmake gcc-arm-linux-gnueabihf g++-4.8-arm-linux-gnueabihf libtbb-dev build-essential
 ```
 
 ### Building libjpeg-turbo
