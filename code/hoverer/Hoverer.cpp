@@ -103,10 +103,13 @@ void rcCallback(const roscopter::RC::ConstPtr& rcMsg) {
 	updateRC(rcMsg);
 
 	if (updateControllerActive(rcMsg->channel[4])) {  // CHECK CHANNEL
-		if (!isControllerActive()) {
+		if (isControllerActive()) {
 			// Revert to manual control
+			ROS_INFO("Controller now inactive");
 			ROS_INFO("Setting state and performing action: FLYING");
 			setStateAndPerformAction(FLYING);
+		} else {
+			ROS_INFO("Controller now active");
 		}
 	}
 
