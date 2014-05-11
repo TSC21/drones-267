@@ -39,7 +39,7 @@ bool updateLanderActive(int controlChannelValue) {
     else
         landerActive = false;
 
-    return (oldLanderActive == landerActive);
+    return !(oldLanderActive == landerActive);
 }
 
 States currentState;
