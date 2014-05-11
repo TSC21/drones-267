@@ -48,7 +48,7 @@ enum Elevator {
 
 enum Throttle {
 	THROTTLE_LOW = 1124,
-	THROTTLE_HIGH = 1927
+	THROTTLE_HIGH = 1927,
 	THROTTLE_RANGE = 803
 };
 

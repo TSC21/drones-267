@@ -88,7 +88,7 @@ void poseCallback(const std_msgs::Float64MultiArray::ConstPtr& poseMsg) {
 	if (isControllerActive()) {		
 		if (getState() == HOVERING) {
 			ROS_INFO("Performing action: HOVERING");
-			performStateAction(HOVERING);
+			performStateAction();
 		} else {
 			ROS_INFO("Setting state and performing action: HOVERING");
 			// Capture hover values

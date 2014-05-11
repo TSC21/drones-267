@@ -71,9 +71,3 @@ std::vector<roscopter::RC> getStateAction() {
     }
     return controlMsgs;
 }
-
-std::vector<roscopter::RC> getNeutralAction() {
-	std::vector<roscopter::RC> controlMsgs;
-	controlMsgs.push_back(getNeutralControlMsg());
-    return controlMsgs;
-}
