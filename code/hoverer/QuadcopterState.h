@@ -95,4 +95,6 @@ QuadcopterState getQuadcopterState();
 */
 QuadcopterPose getQuadcopterPose();
 
+QuadcopterPose getStartingPose();
+
 #endif

@@ -77,3 +77,7 @@ QuadcopterState getQuadcopterState () {
 QuadcopterPose getQuadcopterPose () {
 	return latestPose;
 }
+
+QuadcopterPose getStartingPose () {
+	return startingPose;
+}

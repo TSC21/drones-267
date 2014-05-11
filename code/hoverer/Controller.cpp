@@ -103,10 +103,6 @@ roscopter::RC buildRCMsg(int aileron, int elevator, int throttle, int yaw) {
 }
 
 roscopter::RC getTranslateControlMsg () {
-	if (getQuadcopterPose().yaw > YAW_CORRECTION || getQuadcopterPose().yaw < (-1*YAW_CORRECTION)) {
-		return getRotationControlMsg();
-	}
-
 	// Assume we are always pointing forwards and therefore
 	// can map x and y onto aileron and elevator inputs
 
