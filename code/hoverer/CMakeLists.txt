@@ -41,6 +41,10 @@ add_executable(Hoverer
     QuadcopterState.cpp
 )
 
-target_link_libraries(Lander ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(Hoverer ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+install(TARGETS Hoverer
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 set( CMAKE_BUILD_TYPE Debug )

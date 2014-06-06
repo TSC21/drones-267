@@ -29,4 +29,8 @@ add_executable(Debugger
 
 target_link_libraries(Debugger ${catkin_LIBRARIES})
 
+install(TARGETS Debugger
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 set( CMAKE_BUILD_TYPE Debug )
