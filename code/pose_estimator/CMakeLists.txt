@@ -81,4 +81,8 @@ add_executable(TestPoseFromCamera
 )
 target_link_libraries(TestPoseFromCamera ${OpenCV_LIBS})
 
+install(TARGETS PoseEstimator TestGeometry TestCornersFromImages TestCornersFromCamera TestPoseFromImages DemoPoseFromImages TestPoseFromCamera 
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 set( CMAKE_BUILD_TYPE Debug )

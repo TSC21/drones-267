@@ -43,4 +43,8 @@ add_executable(Lander
 
 target_link_libraries(Lander ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
+install(TARGETS Lander
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 set( CMAKE_BUILD_TYPE Debug )
